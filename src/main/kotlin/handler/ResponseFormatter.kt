@@ -3,15 +3,19 @@ package handler
 import java.lang.StringBuilder
 
 class ResponseFormatter {
-    fun format(str: String): String{
+    fun formatSimpleString(str: String): String{
         return "+${str}\r\n"
     }
 
-    fun format(array: List<String>): String {
+    fun formatBulkString(str: String): String{
+        return "\$${str.toByteArray().size}\r\n$str\r\n"
+    }
+
+    fun formatBulkStringArray(array: List<String>): String {
         val sb = StringBuilder()
         sb.append("*").append("${array.size}").append("\r\n")
         for(str in array){
-            sb.append("\$${str.toByteArray().size}\r\n$str\r\n")
+            sb.append(formatBulkString(str))
         }
         return sb.toString()
     }

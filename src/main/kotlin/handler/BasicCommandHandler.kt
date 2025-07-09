@@ -7,7 +7,7 @@ class BasicCommandHandler(
 ): CommandHandler {
     override fun isHandle(cmd: List<String>): Boolean {
         return when(cmd[0].uppercase()){
-            "PING" -> true
+            in setOf("PING", "ECHO") -> true
             else -> false
         }
     }
@@ -15,10 +15,13 @@ class BasicCommandHandler(
     override fun handle(cmd: List<String>): String {
         return when(cmd[0].uppercase()){
             "PING" -> ping()
+            "ECHO" -> echo(cmd)
             else -> throw UnsupportedOperationException()
         }
     }
 
-    private fun ping() = responseFormatter.format("PONG")
+    private fun ping() = responseFormatter.formatSimpleString("PONG")
+
+    private fun echo(cmd: List<String>) = responseFormatter.formatBulkString(cmd[1])
 
 }
