@@ -3,7 +3,7 @@ package handler
 import java.lang.UnsupportedOperationException
 
 class BasicCommandHandler(
-    private val responseFormatter: ResponseFormatter = ResponseFormatter()
+    private val responseFormatter: ResponseFormatter
 ): CommandHandler {
     override fun isHandle(cmd: List<String>): Boolean {
         return when(cmd[0].uppercase()){

@@ -30,3 +30,38 @@ response
 
 +PONG\r\n
 ```
+
+
+# SET  Command
+
+```
+request
+
+SET foo bar
+```
+
+```
+response
+
++OK\r\n
+```
+
+
+# GET Command
+
+```
+request
+
+get foo
+```
+
+```
+response
+
+없을 경우
+$-1\r\n
+
+있을 경우
+$3\r\nbar\r\n
+
+```

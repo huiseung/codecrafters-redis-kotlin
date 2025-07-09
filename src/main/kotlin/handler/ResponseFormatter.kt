@@ -19,4 +19,8 @@ class ResponseFormatter {
         }
         return sb.toString()
     }
+
+    fun nilBulkString(): String{
+        return "\$-1\r\n"
+    }
 }

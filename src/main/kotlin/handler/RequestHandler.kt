@@ -1,13 +1,17 @@
 package handler
 
+import storage.StorageService
 import java.lang.UnsupportedOperationException
 import java.net.Socket
 
 class RequestHandler(
     private val requestParser: RequestParser = RequestParser(),
+    private val responseFormatter: ResponseFormatter = ResponseFormatter(),
+    private val storageService: StorageService = StorageService()
 ) {
     private val handlers = listOf<CommandHandler>(
-        BasicCommandHandler(),
+        BasicCommandHandler(responseFormatter),
+        StringCommandHandler(responseFormatter, storageService)
     )
 
     fun service(socket: Socket){
