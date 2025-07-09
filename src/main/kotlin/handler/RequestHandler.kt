@@ -11,15 +11,16 @@ class RequestHandler(
     )
 
     fun service(socket: Socket){
-        try{
-            val request = requestParser.parse(socket)
-            val handler = findHandler(request)
-            val response = handler.handle(request)
-            writeResponse(socket, response)
-        }catch (e: Exception){
-            writeResponse(socket, "-ERROR")
+        while(!socket.isClosed){
+            try{
+                val request = requestParser.parse(socket)
+                val handler = findHandler(request)
+                val response = handler.handle(request)
+                writeResponse(socket, response)
+            }catch (e: Exception){
+                writeResponse(socket, "-ERROR")
+            }
         }
-
     }
 
     private fun findHandler(request: List<String>): CommandHandler{
