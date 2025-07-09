@@ -65,3 +65,19 @@ $-1\r\n
 $3\r\nbar\r\n
 
 ```
+
+# Expiry
+
+
+```
+request
+
+ms 단위 만료 시간 
+SET foo bar px 100
+```
+
+```
+response
+
++OK\r\n
+```

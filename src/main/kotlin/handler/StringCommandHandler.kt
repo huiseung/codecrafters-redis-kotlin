@@ -25,7 +25,11 @@ class StringCommandHandler(
     private fun set(cmd: List<String>): String{
         val key = cmd[1]
         val value = cmd[2]
-        storageService.set(key, value)
+        var expirationMs: Long? = null
+        if(cmd.size == 5 && cmd[3].uppercase() == "PX"){
+            expirationMs = cmd[4].toLong()
+        }
+        storageService.set(key, value, expirationMs)
         return responseFormatter.formatSimpleString("OK")
     }
 

@@ -22,7 +22,7 @@ class RequestHandler(
                 val response = handler.handle(request)
                 writeResponse(socket, response)
             }catch (e: Exception){
-                writeResponse(socket, "-ERROR")
+                writeResponse(socket, "-ERROR ${e.message}\r\n")
             }
         }
     }
