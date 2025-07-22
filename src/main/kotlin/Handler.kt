@@ -37,7 +37,11 @@ class Handler(
     private fun echo(request: List<String>) = BulkString(request[1])
 
     private fun set(request: List<String>): String{
-        storageService.set(request[1], request[2], null)
+        if(request.size == 5 && request[3].uppercase() == "PX"){
+            storageService.set(request[1], request[2], request[4].toLong())
+        }else{
+            storageService.set(request[1], request[2], null)
+        }
         return "OK"
     }
 

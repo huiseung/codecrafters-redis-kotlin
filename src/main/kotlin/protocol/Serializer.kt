@@ -30,7 +30,7 @@ class Serializer(
     }
 
     private fun writeNil(value: Nil) {
-        outputStream.write("${Resp.simpleString}${Resp.nil}${Resp.crlf}".toByteArray())
+        outputStream.write("${Resp.bulkString}${Resp.nil}${Resp.crlf}".toByteArray())
     }
 }
 
