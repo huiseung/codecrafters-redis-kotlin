@@ -9,13 +9,18 @@ class ListCommandHandler(
 ) {
     fun rpush(request: List<String>): RespInteger {
         val key = request[1]
-        val value = request[2]
         val pastList = storageService.get(key)
         val newList: MutableList<String> = if (pastList is Nil) {
-            mutableListOf(value)
+            val ret = mutableListOf<String>()
+            for(idx in 2 until request.size){
+               ret.add(request[idx])
+            }
+            ret
         } else if (pastList is MutableList<*>) {
             val ret = pastList as MutableList<String>
-            ret.add(value)
+            for(idx in 2 until request.size){
+                ret.add(request[idx])
+            }
             ret
         } else {
             mutableListOf()
