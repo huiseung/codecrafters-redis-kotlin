@@ -1,5 +1,7 @@
+import handler.ListCommandHandler
 import model.BulkString
 import model.Nil
+import model.RespError
 import protocol.DeSerializer
 import protocol.Serializer
 import java.net.Socket
@@ -7,6 +9,7 @@ import java.net.Socket
 class Handler(
     private val clientSocket: Socket,
     private val storageService: StorageService = StorageService(),
+    private val listCommandHandler: ListCommandHandler = ListCommandHandler(storageService)
 ) {
     fun handle(){
         clientSocket.use{
@@ -23,7 +26,8 @@ class Handler(
                         "ECHO" -> echo(request)
                         "SET" -> set(request)
                         "GET" -> get(request)
-                        else -> "-ERROR\r\nUnSupport\r\nCommand"
+                        "RPUSH" -> listCommandHandler.rpush(request)
+                        else -> RespError("UnSupport Command")
                     }
                     serializer.write(data)
                 }catch (e: Exception){

@@ -1,8 +1,6 @@
 package protocol
 
-import model.BulkString
-import model.Nil
-import model.Resp
+import model.*
 import java.io.OutputStream
 
 class Serializer(
@@ -15,22 +13,34 @@ class Serializer(
             writeBulkString(value)
         } else if (value is Nil) {
             writeNil(value)
+        } else if(value is RespInteger){
+            writeInteger(value)
+        } else if(value is RespError){
+            writeError(value)
         }
         outputStream.flush()
     }
 
     private fun writeSimpleString(value: String) {
-        outputStream.write("${Resp.simpleString}${value}${Resp.crlf}".toByteArray())
+        outputStream.write("${RESP.simpleString}${value}${RESP.crlf}".toByteArray())
     }
 
     private fun writeBulkString(value: BulkString) {
         val data = value.message.toByteArray()
-        outputStream.write("${Resp.bulkString}${data.size}${Resp.crlf}".toByteArray())
+        outputStream.write("${RESP.bulkString}${data.size}${RESP.crlf}".toByteArray())
         outputStream.write("${value.message}\r\n".toByteArray())
     }
 
     private fun writeNil(value: Nil) {
-        outputStream.write("${Resp.bulkString}${Resp.nil}${Resp.crlf}".toByteArray())
+        outputStream.write("${RESP.bulkString}${RESP.nil}${RESP.crlf}".toByteArray())
+    }
+
+    private fun writeInteger(value: RespInteger){
+        outputStream.write("${RESP.integer}${value.value}${RESP.crlf}".toByteArray())
+    }
+
+    private fun writeError(value: RespError){
+        outputStream.write("${RESP.error}${value.message}${RESP.crlf}".toByteArray())
     }
 }
 

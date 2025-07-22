@@ -1,6 +1,6 @@
 package protocol
 
-import model.Resp
+import model.RESP
 import java.io.InputStream
 import java.io.InputStreamReader
 import java.lang.IllegalArgumentException
@@ -16,9 +16,9 @@ class DeSerializer(
             return emptyList()
         }
         return when(Char(type)){
-            Resp.array -> parseArray()
-            Resp.bulkString -> listOf(parseBulkString())
-            Resp.simpleString -> listOf(parseSimpleString())
+            RESP.array -> parseArray()
+            RESP.bulkString -> listOf(parseBulkString())
+            RESP.simpleString -> listOf(parseSimpleString())
             else -> throw IllegalArgumentException()
         }
     }
@@ -32,7 +32,7 @@ class DeSerializer(
         repeat(length){
             val type = inputReader.read()
             val data = when(Char(type)){
-                Resp.bulkString -> parseBulkString()
+                RESP.bulkString -> parseBulkString()
                 else -> throw IllegalArgumentException()
             }
             cmd.add(data)
