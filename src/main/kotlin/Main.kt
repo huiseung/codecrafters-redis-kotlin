@@ -1,6 +1,7 @@
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.net.ServerSocket
+import kotlin.concurrent.thread
 
 fun main(args: Array<String>) {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
@@ -13,21 +14,13 @@ fun main(args: Array<String>) {
     // // ensures that we don't run into 'Address already in use' errors
     serverSocket.use {
         serverSocket.reuseAddress = true
-        val clientSocket = serverSocket.accept()
-        clientSocket.use{
-            val input = clientSocket.getInputStream()
-            val output = clientSocket.getOutputStream()
-            val reader = BufferedReader(InputStreamReader(input))
-
-            while(true){
-                val request = reader.readLine() ?: break
-                if(request.equals("PING", ignoreCase = true)){
-                    output.write("+PONG\r\n".toByteArray())
-                    output.flush()
-                }
+        while(true){
+            val clientSocket = serverSocket.accept()
+            val handler = Handler(clientSocket)
+            thread{
+                handler.handle()
             }
         }
-
     }
 
 }
