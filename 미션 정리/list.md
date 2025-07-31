@@ -73,3 +73,35 @@ c\r\n
   - start = list.size + start
   - end = list.size + end
   - 음수 값이 list.size 보다 크면 0으로 대체
+
+
+# lpush
+- 리스트 왼쪽에 원소 추가
+- 리스트가 없으면 새로 생성후 추가
+
+```
+> LPUSH list_key "a" "b" "c"
+(integer) 3
+
+> LRANGE list_key 0 -1
+1) "c"
+2) "b"
+3) "a"
+```
+
+## test
+
+```
+$ redis-cli
+> LPUSH list_key "c"
+# Expect: (integer) 1
+
+> LPUSH list_key "b" "a"
+# Expect: (integer) 3
+```
+
+
+```
+> LRANGE list_key 0 -1
+# Expect RESP Encoded Array: ["a", "b", "c"]
+```

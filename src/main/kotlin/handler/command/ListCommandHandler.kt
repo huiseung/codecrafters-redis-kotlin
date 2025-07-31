@@ -9,7 +9,7 @@ class ListCommandHandler(
     val storageService: StorageService,
     private val commandResultWriter: CommandResultWriter = CommandResultWriter(),
 ) : CommandHandler {
-    private val handleCmds = setOf("RPUSH", "LRANGE")
+    private val handleCmds = setOf("RPUSH", "LRANGE", "LPUSH")
     override fun isHandle(cmd: String): Boolean {
         return handleCmds.contains(cmd)
     }
@@ -17,6 +17,7 @@ class ListCommandHandler(
     override fun handle(connection: Connection) {
         when (connection.cmd) {
             "RPUSH" -> rpush(connection)
+            "LPUSH" -> lpush(connection)
             "LRANGE" -> lrange(connection)
         }
     }
@@ -36,6 +37,21 @@ class ListCommandHandler(
         commandResultWriter.writeInteger(connection, list.size)
     }
 
+    private fun lpush(connection: Connection) {
+        val key = connection.args[0]
+        val values = connection.args.drop(1)
+
+        if (storageService.getList(key) == null) {
+            storageService.setList(key, mutableListOf())
+        }
+        val list = storageService.getList(key)!!
+        for (value in values) {
+            list.add(0, value)
+        }
+        storageService.setList(key, list)
+        commandResultWriter.writeInteger(connection, list.size)
+    }
+
     private fun lrange(connection: Connection) {
         val key = connection.args[0]
         var start = connection.args[1].toInt()
@@ -47,16 +63,16 @@ class ListCommandHandler(
             return
         }
         if (start < 0) {
-            if(start * -1 > list.size){
+            if (start * -1 > list.size) {
                 start = 0
-            }else{
+            } else {
                 start += list.size
             }
         }
         if (end < 0) {
-            if(end * -1 > list.size){
+            if (end * -1 > list.size) {
                 end = 0
-            }else{
+            } else {
                 end += list.size
             }
         }
