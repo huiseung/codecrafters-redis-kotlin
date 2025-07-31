@@ -105,3 +105,7 @@ $ redis-cli
 > LRANGE list_key 0 -1
 # Expect RESP Encoded Array: ["a", "b", "c"]
 ```
+
+# llen
+- 길이 반환
+- 없는 리스트는 0 반환

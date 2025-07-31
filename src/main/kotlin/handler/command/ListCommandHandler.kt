@@ -9,7 +9,7 @@ class ListCommandHandler(
     val storageService: StorageService,
     private val commandResultWriter: CommandResultWriter = CommandResultWriter(),
 ) : CommandHandler {
-    private val handleCmds = setOf("RPUSH", "LRANGE", "LPUSH")
+    private val handleCmds = setOf("RPUSH", "LRANGE", "LPUSH", "LLEN")
     override fun isHandle(cmd: String): Boolean {
         return handleCmds.contains(cmd)
     }
@@ -19,6 +19,7 @@ class ListCommandHandler(
             "RPUSH" -> rpush(connection)
             "LPUSH" -> lpush(connection)
             "LRANGE" -> lrange(connection)
+            "LLEN" -> llen(connection)
         }
     }
 
@@ -81,5 +82,11 @@ class ListCommandHandler(
             return
         }
         commandResultWriter.writeArrayOfBulkString(connection, list.subList(start, min(list.size, end + 1)))
+    }
+
+    private fun llen(connection: Connection) {
+        val key = connection.args[0]
+        val list = storageService.getList(key)
+        commandResultWriter.writeInteger(connection, list?.size ?: 0)
     }
 }
