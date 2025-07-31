@@ -32,4 +32,8 @@ class StorageService {
     fun setList(key: String, value: LinkedList<String>) {
         db[key] = Entry(RedisObject.RedisList(value), null)
     }
+
+    fun deleteList(key: String){
+        db.remove(key)
+    }
 }

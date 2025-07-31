@@ -110,5 +110,8 @@ class ListCommandHandler(
             }
             commandResultWriter.writeArrayOfBulkString(connection, ret)
         }
+        if (list.size == 0) {
+            storageService.deleteList(key)
+        }
     }
 }
