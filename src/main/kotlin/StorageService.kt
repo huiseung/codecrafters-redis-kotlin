@@ -1,22 +1,34 @@
 import model.Entry
 import model.Nil
+import model.RedisObject
 import java.util.concurrent.ConcurrentHashMap
 
 class StorageService {
     private val db: MutableMap<String, Entry> = ConcurrentHashMap<String, Entry>()
 
-    fun get(key: String): Any{
-        val entry = db[key] ?: return Nil()
-        entry.expiry?.let{
-            if(it < System.currentTimeMillis()){
+    fun getString(key: String): String? {
+        val entry = db[key] ?: return null
+        entry.expireAt?.let {
+            if (it < System.currentTimeMillis()) {
                 db.remove(key)
-                return Nil()
+                return null
             }
         }
-        return entry.value
+        val obj = entry.obj as RedisObject.RedisString
+        return obj.value
     }
 
-    fun set(key: String, value: Any, expiryTime: Long?) {
-        db[key] = Entry(value, expiryTime?.let { it + System.currentTimeMillis() })
+    fun setString(key: String, value: String, expiryTime: Long?) {
+        db[key] = Entry(RedisObject.RedisString(value), expiryTime?.let { it + System.currentTimeMillis() })
+    }
+
+    fun getList(key: String): MutableList<String>? {
+        val entry = db[key] ?: return null
+        val obj = entry.obj as RedisObject.RedisList
+        return obj.value
+    }
+
+    fun setList(key: String, value: MutableList<String>) {
+        db[key] = Entry(RedisObject.RedisList(value), null)
     }
 }

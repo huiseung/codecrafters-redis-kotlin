@@ -1,0 +1,52 @@
+package handler
+
+import Connection
+import ConnectionType
+import StorageService
+import handler.command.BasicCommandHandler
+import handler.command.CommandHandler
+import handler.command.ListCommandHandler
+import handler.command.StringCommandHandler
+import protocol.CommandReader
+import protocol.CommandResultWriter
+import java.lang.IllegalArgumentException
+import java.net.Socket
+
+class Handler(
+    private val clientSocket: Socket,
+    private val storageService: StorageService = StorageService(),
+    private val commandHandlers: List<CommandHandler> = listOf(
+        BasicCommandHandler(),
+        StringCommandHandler(storageService),
+        ListCommandHandler(storageService),
+    ),
+) {
+    private val connection: Connection by lazy {
+        Connection(clientSocket, ConnectionType.TO_NORMAL)
+    }
+
+    private val commandReader = CommandReader()
+    private val commandResultWriter = CommandResultWriter()
+
+    fun handle() {
+        connection.clientSocket.use {
+            while (true) {
+                when (connection.connectionType) {
+                    ConnectionType.TO_NORMAL, ConnectionType.TO_MASTER -> {
+                        try {
+                            commandReader.read(connection)
+                            var commandHandler = commandHandlers.firstOrNull() { it.isHandle(connection.cmd) }
+                                ?: throw IllegalArgumentException("can't handle command")
+                            commandHandler.handle(connection)
+                        } catch (e: Exception) {
+                            commandResultWriter.writeError(connection, e.message)
+                        }
+                    }
+                    ConnectionType.FOR_FULLSYNC -> {
+
+                    }
+                }
+            }
+        }
+    }
+}

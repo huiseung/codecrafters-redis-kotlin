@@ -1,0 +1,50 @@
+package handler.command
+
+import Connection
+import StorageService
+import protocol.CommandResultWriter
+import kotlin.math.min
+
+class ListCommandHandler(
+    val storageService: StorageService,
+    private val commandResultWriter: CommandResultWriter = CommandResultWriter(),
+) : CommandHandler {
+    private val handleCmds = setOf("RPUSH", "LRANGE")
+    override fun isHandle(cmd: String): Boolean {
+        return handleCmds.contains(cmd)
+    }
+
+    override fun handle(connection: Connection) {
+        when (connection.cmd) {
+            "RPUSH" -> rpush(connection)
+            "LRANGE" -> lrange(connection)
+        }
+    }
+
+    private fun rpush(connection: Connection) {
+        val key = connection.args[0]
+        val values = connection.args.drop(1)
+
+        if (storageService.getList(key) == null) {
+            storageService.setList(key, mutableListOf())
+        }
+        val list = storageService.getList(key)!!
+        for (value in values) {
+            list.add(value)
+        }
+        storageService.setList(key, list)
+        commandResultWriter.writeInteger(connection, list.size)
+    }
+
+    private fun lrange(connection: Connection){
+        val key = connection.args[0]
+        val start = connection.args[1].toInt()
+        val end = connection.args[2].toInt()
+        val list = storageService.getList(key)
+        if(list == null || start >= list.size){
+            commandResultWriter.writeArrayOfBulkString(connection, emptyList())
+            return
+        }
+        commandResultWriter.writeArrayOfBulkString(connection, list.subList(start, min(list.size, end+1)))
+    }
+}
