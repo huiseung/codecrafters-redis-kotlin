@@ -109,3 +109,22 @@ $ redis-cli
 # llen
 - 길이 반환
 - 없는 리스트는 0 반환
+
+
+# lpop
+- 앞에 원소 제거후 반환 bulk string
+
+```
+> RPUSH list_key "a" "b" "c" "d"
+(integer) 4
+
+> LPOP list_key
+"a"
+```
+
+- 리스트 없으면
+
+```
+# nil
+$-1\r\n
+```

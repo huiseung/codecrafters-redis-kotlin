@@ -13,3 +13,7 @@
 ## sealed class
 - 같은 파일 안에서만 상속 가능한 abstract class
 - 컴파일 단계에서 when문 조건의 가능한 값들을 알기에 else 없이 사용 가능
+
+
+# mutable list
+- 코틀린의 MutableList는 java의 ArrayList를 이용한다

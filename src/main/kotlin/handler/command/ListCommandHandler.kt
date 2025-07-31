@@ -3,13 +3,14 @@ package handler.command
 import Connection
 import StorageService
 import protocol.CommandResultWriter
+import java.util.*
 import kotlin.math.min
 
 class ListCommandHandler(
     val storageService: StorageService,
     private val commandResultWriter: CommandResultWriter = CommandResultWriter(),
 ) : CommandHandler {
-    private val handleCmds = setOf("RPUSH", "LRANGE", "LPUSH", "LLEN")
+    private val handleCmds = setOf("RPUSH", "LRANGE", "LPUSH", "LLEN", "LPOP")
     override fun isHandle(cmd: String): Boolean {
         return handleCmds.contains(cmd)
     }
@@ -20,6 +21,7 @@ class ListCommandHandler(
             "LPUSH" -> lpush(connection)
             "LRANGE" -> lrange(connection)
             "LLEN" -> llen(connection)
+            "LPOP" -> lpop(connection)
         }
     }
 
@@ -28,7 +30,7 @@ class ListCommandHandler(
         val values = connection.args.drop(1)
 
         if (storageService.getList(key) == null) {
-            storageService.setList(key, mutableListOf())
+            storageService.setList(key, LinkedList())
         }
         val list = storageService.getList(key)!!
         for (value in values) {
@@ -43,7 +45,7 @@ class ListCommandHandler(
         val values = connection.args.drop(1)
 
         if (storageService.getList(key) == null) {
-            storageService.setList(key, mutableListOf())
+            storageService.setList(key, LinkedList())
         }
         val list = storageService.getList(key)!!
         for (value in values) {
@@ -88,5 +90,16 @@ class ListCommandHandler(
         val key = connection.args[0]
         val list = storageService.getList(key)
         commandResultWriter.writeInteger(connection, list?.size ?: 0)
+    }
+
+    private fun lpop(connection: Connection){
+        val key = connection.args[0]
+        val list = storageService.getList(key)
+        if(list == null){
+            commandResultWriter.writeNIL(connection)
+            return
+        }
+        val value = list.pollFirst()
+        commandResultWriter.writeBulkString(connection, value)
     }
 }

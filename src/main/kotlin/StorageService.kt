@@ -1,6 +1,7 @@
 import model.Entry
 import model.Nil
 import model.RedisObject
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class StorageService {
@@ -22,13 +23,13 @@ class StorageService {
         db[key] = Entry(RedisObject.RedisString(value), expiryTime?.let { it + System.currentTimeMillis() })
     }
 
-    fun getList(key: String): MutableList<String>? {
+    fun getList(key: String): LinkedList<String>? {
         val entry = db[key] ?: return null
         val obj = entry.obj as RedisObject.RedisList
         return obj.value
     }
 
-    fun setList(key: String, value: MutableList<String>) {
+    fun setList(key: String, value: LinkedList<String>) {
         db[key] = Entry(RedisObject.RedisList(value), null)
     }
 }
