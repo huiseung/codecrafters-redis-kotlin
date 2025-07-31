@@ -113,6 +113,8 @@ $ redis-cli
 
 # lpop
 - 앞에 원소 제거후 반환 bulk string
+- 파라미터 지정시 지정 수만큼 제거해 array 반환
+- 지정 수가 길이보다 크면 길이 만큼 반환
 
 ```
 > RPUSH list_key "a" "b" "c" "d"

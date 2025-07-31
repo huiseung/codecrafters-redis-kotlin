@@ -92,14 +92,23 @@ class ListCommandHandler(
         commandResultWriter.writeInteger(connection, list?.size ?: 0)
     }
 
-    private fun lpop(connection: Connection){
+    private fun lpop(connection: Connection) {
         val key = connection.args[0]
         val list = storageService.getList(key)
-        if(list == null){
+        if (list == null) {
             commandResultWriter.writeNIL(connection)
             return
         }
-        val value = list.pollFirst()
-        commandResultWriter.writeBulkString(connection, value)
+        if (connection.argCount == 1) {
+            val value = list.pollFirst()
+            commandResultWriter.writeBulkString(connection, value)
+        } else {
+            val count = min(list.size, connection.args[1].toInt())
+            val ret = LinkedList<String>()
+            repeat(count) {
+                ret.add(list.pollFirst())
+            }
+            commandResultWriter.writeArrayOfBulkString(connection, ret)
+        }
     }
 }
