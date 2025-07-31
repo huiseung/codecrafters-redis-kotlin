@@ -1,5 +1,5 @@
 # lrange
-
+## positive index
 ```
 # Create a list with 5 items
 > RPUSH list_key "a" "b" "c" "d" "e"
@@ -15,6 +15,24 @@
 1) "c"
 2) "d"
 3) "e"
+```
+
+## negative index
+```
+# Create a list with 5 items
+> RPUSH list_key "a" "b" "c" "d" "e"
+(integer) 5
+
+# List last 2 items 
+> LRANGE list_key -2 -1
+1) "d"
+2) "e"
+
+# List all items expect last 2
+> LRANGE list_key 0 -3
+1) "a"
+2) "b"
+3) "c"
 ```
 
 
@@ -39,6 +57,9 @@ $1\r\n
 c\r\n
 ```
 
+- start > end
+  - 텅빈 리스트 처리
+
 - list가 없을 경우
 
 ```
@@ -46,4 +67,9 @@ c\r\n
 ```
 - list 범위 넘겨 요청
     - end가 넘어갈 경우 error 없이 가능 범위 최대치 까지 지원
-    - start가 넘어갈 경우 error 없이 empty list 처리
+    - start가 길이 이상일 경우 error 없이 empty list 처리
+
+- start, end 가 음수인 경우
+  - start = list.size + start
+  - end = list.size + end
+  - 음수 값이 list.size 보다 크면 0으로 대체

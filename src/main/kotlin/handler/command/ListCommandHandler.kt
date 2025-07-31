@@ -36,15 +36,34 @@ class ListCommandHandler(
         commandResultWriter.writeInteger(connection, list.size)
     }
 
-    private fun lrange(connection: Connection){
+    private fun lrange(connection: Connection) {
         val key = connection.args[0]
-        val start = connection.args[1].toInt()
-        val end = connection.args[2].toInt()
+        var start = connection.args[1].toInt()
+        var end = connection.args[2].toInt()
+
         val list = storageService.getList(key)
-        if(list == null || start >= list.size){
+        if (list == null) {
             commandResultWriter.writeArrayOfBulkString(connection, emptyList())
             return
         }
-        commandResultWriter.writeArrayOfBulkString(connection, list.subList(start, min(list.size, end+1)))
+        if (start < 0) {
+            if(start * -1 > list.size){
+                start = 0
+            }else{
+                start += list.size
+            }
+        }
+        if (end < 0) {
+            if(end * -1 > list.size){
+                end = 0
+            }else{
+                end += list.size
+            }
+        }
+        if (start >= list.size || start > end) {
+            commandResultWriter.writeArrayOfBulkString(connection, emptyList())
+            return
+        }
+        commandResultWriter.writeArrayOfBulkString(connection, list.subList(start, min(list.size, end + 1)))
     }
 }
