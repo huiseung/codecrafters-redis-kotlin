@@ -29,6 +29,9 @@ class Handler(
                     ConnectionType.TO_NORMAL, ConnectionType.TO_MASTER -> {
                         try {
                             commandReader.read(connection)
+                            if (connection.cmd.isBlank()) {
+                                break
+                            }
                             var commandHandler = commandHandlers.firstOrNull() { it.isHandle(connection.cmd) }
                                 ?: throw IllegalArgumentException("can't handle command: ${connection.cmd} .")
                             commandHandler.handle(connection)
