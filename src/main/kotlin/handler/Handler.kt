@@ -30,7 +30,7 @@ class Handler(
                         try {
                             commandReader.read(connection)
                             var commandHandler = commandHandlers.firstOrNull() { it.isHandle(connection.cmd) }
-                                ?: throw IllegalArgumentException("can't handle command")
+                                ?: throw IllegalArgumentException("can't handle command: ${connection.cmd} .")
                             commandHandler.handle(connection)
                         } catch (e: Exception) {
                             println("ERROR: ${e.message}")

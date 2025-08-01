@@ -69,8 +69,8 @@ class ListCommandHandler(
 
     private suspend fun blpop(connection: Connection) {
         val key = connection.args[0]
-        val timeout = connection.args[1].toLong() * 1000
-        val ret = storageService.blpop(key, timeout)
+        val timeout = connection.args[1].toDouble() * 1000
+        val ret = storageService.blpop(key, timeout.toLong())
         if (ret == null) {
             commandResultWriter.writeNIL(connection)
             return
