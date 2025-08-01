@@ -14,21 +14,15 @@ import java.net.Socket
 
 class Handler(
     private val clientSocket: Socket,
-    private val storageService: StorageService = StorageService(),
-    private val commandHandlers: List<CommandHandler> = listOf(
-        BasicCommandHandler(),
-        StringCommandHandler(storageService),
-        ListCommandHandler(storageService),
-    ),
+    private val commandHandlers: List<CommandHandler>,
+    private val commandReader: CommandReader,
+    private val commandResultWriter: CommandResultWriter,
 ) {
     private val connection: Connection by lazy {
         Connection(clientSocket, ConnectionType.TO_NORMAL)
     }
 
-    private val commandReader = CommandReader()
-    private val commandResultWriter = CommandResultWriter()
-
-    fun handle() {
+    suspend fun handle() {
         connection.clientSocket.use {
             while (true) {
                 when (connection.connectionType) {
@@ -42,6 +36,7 @@ class Handler(
                             commandResultWriter.writeError(connection, e.message)
                         }
                     }
+
                     ConnectionType.FOR_FULLSYNC -> {
 
                     }

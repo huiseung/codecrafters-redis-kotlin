@@ -4,7 +4,7 @@ import Connection
 import protocol.CommandResultWriter
 
 class BasicCommandHandler(
-    private val commandResultWriter: CommandResultWriter = CommandResultWriter()
+    private val commandResultWriter: CommandResultWriter
 ) : CommandHandler {
     private val handleCommands = setOf("ECHO", "PING")
 
@@ -12,7 +12,7 @@ class BasicCommandHandler(
         return handleCommands.contains(cmd)
     }
 
-    override fun handle(connection: Connection) {
+    override suspend fun handle(connection: Connection) {
         when (connection.cmd) {
             "PING" -> ping(connection)
             "ECHO" -> echo(connection)

@@ -3,115 +3,78 @@ package handler.command
 import Connection
 import StorageService
 import protocol.CommandResultWriter
-import java.util.*
-import kotlin.math.min
+
 
 class ListCommandHandler(
     val storageService: StorageService,
-    private val commandResultWriter: CommandResultWriter = CommandResultWriter(),
+    private val commandResultWriter: CommandResultWriter,
 ) : CommandHandler {
-    private val handleCmds = setOf("RPUSH", "LRANGE", "LPUSH", "LLEN", "LPOP")
+    private val handleCmds = setOf("RPUSH", "LRANGE", "LPUSH", "LLEN", "LPOP", "BLPOP")
+
     override fun isHandle(cmd: String): Boolean {
         return handleCmds.contains(cmd)
     }
 
-    override fun handle(connection: Connection) {
+    override suspend fun handle(connection: Connection) {
         when (connection.cmd) {
             "RPUSH" -> rpush(connection)
             "LPUSH" -> lpush(connection)
             "LRANGE" -> lrange(connection)
             "LLEN" -> llen(connection)
             "LPOP" -> lpop(connection)
+            "BLPOP" -> blpop(connection)
         }
     }
 
-    private fun rpush(connection: Connection) {
+
+    private suspend fun rpush(connection: Connection) {
         val key = connection.args[0]
         val values = connection.args.drop(1)
-
-        if (storageService.getList(key) == null) {
-            storageService.setList(key, LinkedList())
-        }
-        val list = storageService.getList(key)!!
-        for (value in values) {
-            list.add(value)
-        }
-        storageService.setList(key, list)
-        commandResultWriter.writeInteger(connection, list.size)
+        val ret = storageService.rpush(key, values)
+        commandResultWriter.writeInteger(connection, ret)
     }
 
-    private fun lpush(connection: Connection) {
+    private suspend fun lpush(connection: Connection) {
         val key = connection.args[0]
         val values = connection.args.drop(1)
-
-        if (storageService.getList(key) == null) {
-            storageService.setList(key, LinkedList())
-        }
-        val list = storageService.getList(key)!!
-        for (value in values) {
-            list.add(0, value)
-        }
-        storageService.setList(key, list)
-        commandResultWriter.writeInteger(connection, list.size)
+        commandResultWriter.writeInteger(connection, storageService.lpush(key, values))
     }
 
-    private fun lrange(connection: Connection) {
+    private suspend fun lrange(connection: Connection) {
         val key = connection.args[0]
         var start = connection.args[1].toInt()
         var end = connection.args[2].toInt()
-
-        val list = storageService.getList(key)
-        if (list == null) {
-            commandResultWriter.writeArrayOfBulkString(connection, emptyList())
-            return
-        }
-        if (start < 0) {
-            if (start * -1 > list.size) {
-                start = 0
-            } else {
-                start += list.size
-            }
-        }
-        if (end < 0) {
-            if (end * -1 > list.size) {
-                end = 0
-            } else {
-                end += list.size
-            }
-        }
-        if (start >= list.size || start > end) {
-            commandResultWriter.writeArrayOfBulkString(connection, emptyList())
-            return
-        }
-        commandResultWriter.writeArrayOfBulkString(connection, list.subList(start, min(list.size, end + 1)))
+        commandResultWriter.writeArrayOfBulkString(connection, storageService.lrange(key, start, end))
     }
 
-    private fun llen(connection: Connection) {
+    private suspend fun llen(connection: Connection) {
         val key = connection.args[0]
-        val list = storageService.getList(key)
-        commandResultWriter.writeInteger(connection, list?.size ?: 0)
+        commandResultWriter.writeInteger(connection, storageService.llen(key))
     }
 
-    private fun lpop(connection: Connection) {
+    private suspend fun lpop(connection: Connection) {
         val key = connection.args[0]
-        val list = storageService.getList(key)
-        if (list == null) {
+        val count = if (connection.argCount > 1) connection.args[1].toInt() else 1
+        val result = storageService.lpop(key, count)
+        when {
+            result == null -> {
+                if (count == 1) commandResultWriter.writeNIL(connection)
+                else commandResultWriter.writeArrayOfBulkString(connection, emptyList())
+            }
+
+            count == 1 -> commandResultWriter.writeBulkString(connection, result.first())
+            else -> commandResultWriter.writeArrayOfBulkString(connection, result)
+        }
+    }
+
+    private suspend fun blpop(connection: Connection) {
+        val key = connection.args[0]
+        val timeout = connection.args[1].toLong() * 1000
+        val ret = storageService.blpop(key, timeout)
+        if (ret == null) {
             commandResultWriter.writeNIL(connection)
             return
         }
-        if (connection.argCount == 1) {
-            val value = list.pollFirst()
-            commandResultWriter.writeBulkString(connection, value)
-        } else {
-            val count = min(list.size, connection.args[1].toInt())
-            val ret = LinkedList<String>()
-            repeat(count) {
-                ret.add(list.pollFirst())
-            }
-            commandResultWriter.writeArrayOfBulkString(connection, ret)
-        }
-        if (list.size == 0) {
-            storageService.deleteList(key)
-        }
+        commandResultWriter.writeArrayOfBulkString(connection, ret.toList())
     }
 }

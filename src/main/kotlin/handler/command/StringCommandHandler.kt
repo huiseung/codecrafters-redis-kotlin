@@ -6,7 +6,7 @@ import protocol.CommandResultWriter
 
 class StringCommandHandler(
     private val storageService: StorageService,
-    private val commandResultWriter: CommandResultWriter = CommandResultWriter()
+    private val commandResultWriter: CommandResultWriter
 ) : CommandHandler {
     private val handleCommands = setOf("SET", "GET")
 
@@ -14,7 +14,7 @@ class StringCommandHandler(
         return handleCommands.contains(cmd)
     }
 
-    override fun handle(connection: Connection) {
+    override suspend fun handle(connection: Connection) {
         when (connection.cmd) {
             "SET" -> set(connection)
             "GET" -> get(connection)

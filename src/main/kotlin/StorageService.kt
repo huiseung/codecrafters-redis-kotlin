@@ -1,11 +1,16 @@
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import model.Entry
-import model.Nil
 import model.RedisObject
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
 class StorageService {
     private val db: MutableMap<String, Entry> = ConcurrentHashMap<String, Entry>()
+    private val mutexes = ConcurrentHashMap<String, Mutex>()
+    private val queues = ConcurrentHashMap<String, LinkedList<CompletableDeferred<Pair<String, String>>>>()
 
     fun getString(key: String): String? {
         val entry = db[key] ?: return null
@@ -29,11 +34,115 @@ class StorageService {
         return obj.value
     }
 
-    fun setList(key: String, value: LinkedList<String>) {
-        db[key] = Entry(RedisObject.RedisList(value), null)
+    suspend fun blpop(key: String, timeoutMs: Long): Pair<String, String>? {
+        val mutex = mutexes.computeIfAbsent(key) { Mutex() }
+        mutex.withLock {
+            val list = getList(key)
+            if (!list.isNullOrEmpty()) {
+                val value = list.pollFirst()
+                if (list.isEmpty()) {
+                    db.remove(key)
+                }
+                return Pair(key, value)
+            }
+        }
+
+        val deferred = CompletableDeferred<Pair<String, String>>()
+        val queue = queues.computeIfAbsent(key) { LinkedList() }
+        queue.add(deferred)
+
+        return if (timeoutMs == 0L) {
+            println("wait! ${queue.size} ${queue}")
+            deferred.await()
+        } else {
+            withTimeoutOrNull(timeoutMs) {
+                deferred.await()
+            }
+        }.also { ret ->
+            if (ret == null) {
+                mutex.withLock {
+                    println("cancle")
+                    queues[key]?.removeIf { it == deferred }
+                    if (queues[key]?.isEmpty() == true) {
+                        queues.remove(key)
+                    }
+                }
+            } else {
+                mutex.withLock {
+                    println("wake! ${queue.size} ${queue}")
+                    val list = getList(key)
+                    if (!list.isNullOrEmpty()) {
+                        list.pollFirst()
+                    }
+                }
+            }
+        }
     }
 
-    fun deleteList(key: String){
-        db.remove(key)
+    private fun getOrCreateList(key: String): LinkedList<String> {
+        return db.computeIfAbsent(key) {
+            Entry(RedisObject.RedisList(LinkedList()), null)
+        }.let {
+            (it.obj as RedisObject.RedisList).value
+        }
+    }
+
+    suspend fun lpush(key: String, values: List<String>): Int {
+        val mutex = mutexes.computeIfAbsent(key) { Mutex() }
+        return mutex.withLock {
+            val list = getOrCreateList(key)
+            for (value in values) {
+                list.add(0, value)
+            }
+            list.size
+        }
+    }
+
+    suspend fun rpush(key: String, values: List<String>): Int {
+        val mutex = mutexes.computeIfAbsent(key) { Mutex() }
+        val size = mutex.withLock {
+            val list = getOrCreateList(key)
+            list.addAll(values)
+
+            val queue = queues[key]
+            val deferred = queue?.poll()
+            if (queue != null && queue.isEmpty()) {
+                queues.remove(key)
+            }
+            deferred?.complete(Pair(key, list.first()))
+            list.size
+        }
+        return size
+    }
+
+    suspend fun lpop(key: String, count: Int): List<String>? {
+        val mutex = mutexes.computeIfAbsent(key) { Mutex() }
+        return mutex.withLock {
+            val list = getList(key) ?: return null
+            val popped = mutableListOf<String>()
+            repeat(count.coerceAtMost(list.size)) {
+                popped.add(list.removeFirst())
+            }
+            if (list.isEmpty()) db.remove(key)
+            popped
+        }
+    }
+
+    suspend fun llen(key: String): Int {
+        val mutex = mutexes.computeIfAbsent(key) { Mutex() }
+        return mutex.withLock {
+            getList(key)?.size ?: 0
+        }
+    }
+
+    suspend fun lrange(key: String, start: Int, end: Int): List<String> {
+        val mutex = mutexes.computeIfAbsent(key) { Mutex() }
+        return mutex.withLock {
+            val list = getList(key) ?: return emptyList()
+            val from = if (start < 0) list.size + start else start
+            val to = if (end < 0) list.size + end else end
+            if (from > to || from >= list.size) return emptyList()
+            list.subList(from.coerceAtLeast(0), (to + 1).coerceAtMost(list.size)).toList()
+        }
     }
 }
