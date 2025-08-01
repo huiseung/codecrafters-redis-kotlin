@@ -52,13 +52,16 @@ class StorageService {
         queue.add(deferred)
 
         return if (timeoutMs == 0L) {
-            println("wait! ${queue.size} ${queue}")
+            println("wait! ${queue.size}")
             deferred.await()
         } else {
             withTimeoutOrNull(timeoutMs) {
                 deferred.await()
             }
         }.also { ret ->
+            queue.forEach { it ->
+                println("{isActive: ${it.isActive}, isCompleted: ${it.isCompleted}, isCancle: ${it.isCancelled}}")
+            }
             if (ret == null) {
                 mutex.withLock {
                     println("cancle")
@@ -102,9 +105,9 @@ class StorageService {
             if (queue != null && queue.isEmpty()) {
                 queues.remove(key)
             }
-            if(deferred != null){
+            if (deferred != null) {
                 val value = list.pollFirst()
-                if(value != null){
+                if (value != null) {
                     deferred.complete(Pair(key, value))
                 }
             }

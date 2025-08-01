@@ -20,14 +20,20 @@ fun main(args: Array<String>) {
     //
     // // Since the tester restarts your program quite often, setting SO_REUSEADDR
     // // ensures that we don't run into 'Address already in use' errors
+    val config = RedisConfig()
+    config.initConfig(args)
+
     val storageService = StorageService()
+
     val commandReader = CommandReader()
     val commandResultWriter = CommandResultWriter()
     val commandHandler = listOf(
-        BasicCommandHandler(commandResultWriter),
+        BasicCommandHandler(commandResultWriter, config),
         StringCommandHandler(storageService, commandResultWriter),
         ListCommandHandler(storageService, commandResultWriter),
     )
+
+
 
     serverSocket.use {
         serverSocket.reuseAddress = true
