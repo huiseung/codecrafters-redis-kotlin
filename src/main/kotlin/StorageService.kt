@@ -67,14 +67,6 @@ class StorageService {
                         queues.remove(key)
                     }
                 }
-            } else {
-                mutex.withLock {
-                    println("wake! ${queue.size} ${queue}")
-                    val list = getList(key)
-                    if (!list.isNullOrEmpty()) {
-                        list.pollFirst()
-                    }
-                }
             }
         }
     }
@@ -103,14 +95,20 @@ class StorageService {
         val size = mutex.withLock {
             val list = getOrCreateList(key)
             list.addAll(values)
+            val size = list.size
 
             val queue = queues[key]
             val deferred = queue?.poll()
             if (queue != null && queue.isEmpty()) {
                 queues.remove(key)
             }
-            deferred?.complete(Pair(key, list.first()))
-            list.size
+            if(deferred != null){
+                val value = list.pollFirst()
+                if(value != null){
+                    deferred.complete(Pair(key, value))
+                }
+            }
+            size
         }
         return size
     }

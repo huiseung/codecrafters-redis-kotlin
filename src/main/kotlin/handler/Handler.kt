@@ -33,6 +33,7 @@ class Handler(
                                 ?: throw IllegalArgumentException("can't handle command")
                             commandHandler.handle(connection)
                         } catch (e: Exception) {
+                            println("ERROR: ${e.message}")
                             commandResultWriter.writeError(connection, e.message)
                         }
                     }
