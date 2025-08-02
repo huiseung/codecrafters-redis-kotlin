@@ -14,7 +14,7 @@ class StringCommandHandler(
         return handleCommands.contains(cmd)
     }
 
-    override suspend fun handle(connection: Connection) {
+    override fun handle(connection: Connection) {
         when (connection.cmd) {
             "SET" -> set(connection)
             "GET" -> get(connection)
@@ -25,7 +25,7 @@ class StringCommandHandler(
         val key = connection.args[0]
         val value = connection.args[1]
         if (connection.argCount == 4 && connection.args[2].uppercase() == "PX") {
-            storageService.setString(key, value, connection.args[3].toLong())
+            storageService.setString(key, value, connection.args[3].toLong() + System.currentTimeMillis())
         } else {
             storageService.setString(key, value, null)
         }

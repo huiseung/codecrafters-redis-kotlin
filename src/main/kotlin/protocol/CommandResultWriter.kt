@@ -29,6 +29,12 @@ class CommandResultWriter(
         writer.flush()
     }
 
+    fun writeEmptyArray(connection: Connection){
+        val writer = connection.getBufferedWriter()
+        writer.write("${RESP.array}0${RESP.crlf}")
+        writer.flush()
+    }
+
     fun writeNIL(connection: Connection) {
         val writer = connection.getBufferedWriter()
         writer.write("${RESP.bulkString}${RESP.nil}${RESP.crlf}")

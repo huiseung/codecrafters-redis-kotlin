@@ -2,10 +2,6 @@ import handler.Handler
 import handler.command.BasicCommandHandler
 import handler.command.ListCommandHandler
 import handler.command.StringCommandHandler
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import protocol.CommandReader
 import protocol.CommandResultWriter
 import java.net.ServerSocket
@@ -20,15 +16,17 @@ fun main(args: Array<String>) {
     //
     // // Since the tester restarts your program quite often, setting SO_REUSEADDR
     // // ensures that we don't run into 'Address already in use' errors
-    val config = RedisConfig()
-    config.initConfig(args)
+    val redisConfig = RedisConfig()
+    redisConfig.initConfig(args)
 
     val storageService = StorageService()
+    val rdbManager = RdbManager(redisConfig, storageService)
+    rdbManager.loadFromDisk()
 
     val commandReader = CommandReader()
     val commandResultWriter = CommandResultWriter()
     val commandHandler = listOf(
-        BasicCommandHandler(commandResultWriter, config),
+        BasicCommandHandler(commandResultWriter, redisConfig, storageService),
         StringCommandHandler(storageService, commandResultWriter),
         ListCommandHandler(storageService, commandResultWriter),
     )
@@ -40,7 +38,7 @@ fun main(args: Array<String>) {
         while (true) {
             val clientSocket = serverSocket.accept()
             val handler = Handler(clientSocket, commandHandler, commandReader, commandResultWriter)
-            CoroutineScope(Dispatchers.IO).launch {
+            thread {
                 handler.handle()
             }
         }

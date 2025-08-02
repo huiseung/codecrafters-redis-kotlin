@@ -2,23 +2,26 @@ package handler.command
 
 import Connection
 import RedisConfig
+import StorageService
 import protocol.CommandResultWriter
 
 class BasicCommandHandler(
     private val commandResultWriter: CommandResultWriter,
     private val redisConfig: RedisConfig,
+    private val storageService: StorageService,
 ) : CommandHandler {
-    private val handleCommands = setOf("ECHO", "PING", "CONFIG")
+    private val handleCommands = setOf("ECHO", "PING", "CONFIG", "KEYS")
 
     override fun isHandle(cmd: String): Boolean {
         return handleCommands.contains(cmd)
     }
 
-    override suspend fun handle(connection: Connection) {
+    override fun handle(connection: Connection) {
         when (connection.cmd) {
             "PING" -> ping(connection)
             "ECHO" -> echo(connection)
             "CONFIG" -> config(connection)
+            "KEYS" -> keys(connection)
         }
     }
 
@@ -43,5 +46,15 @@ class BasicCommandHandler(
                 commandResultWriter.writeArrayOfBulkString(connection, ret)
             }
         }
+    }
+
+    private fun keys(connection: Connection) {
+        val value = connection.args[0]
+        val ret = storageService.keys(value)
+        println("${ret.size}")
+        ret.forEach{it ->
+            println(it)
+        }
+        commandResultWriter.writeArrayOfBulkString(connection, ret)
     }
 }

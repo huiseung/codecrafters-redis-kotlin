@@ -4,5 +4,5 @@ import Connection
 
 interface CommandHandler {
     fun isHandle(cmd: String): Boolean
-    suspend fun handle(connection: Connection)
+    fun handle(connection: Connection)
 }

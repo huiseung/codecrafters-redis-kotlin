@@ -27,40 +27,10 @@
     - 함수 안에서 파라미터로 받은 객체를 조작하면 함수 밖에서도 유지 된다
     - 클래스 필드를 함수의 반환 값으로 가져온 객체를 조작하면 클래스 필드 값도 변환되어 있다
 
-# coroutine
+# java Condition
+- await
+- await(time:Long, unit: TimeUnit)
 
-```xml
-
-<dependency>
-    <groupId>org.jetbrains.kotlinx</groupId>
-    <artifactId>kotlinx-coroutines-core</artifactId>
-    <version>1.8.1</version>
-</dependency>
-```
-
-```kotlin
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.withTimeoutOrNull
-
-val waitMs = 100
-val deferred = CompletableDeferred<String>()
-val ret = withTimeoutOrNull(waitMs) { deferred.await() } // 지정 ms 만큼 대기
-if (ret == null) {
-    // 시간 초과
-    return
-}
-// != null은 complete 호출 됨을 의미
-```
-
-- suspend 를 붙인 함수를 호출하는 함수는 suspend 가 있어야 한다
-- 그럼 최상위 main 까지도 suspend를 붙이나?
-
-```kotlin
-CoroutineScope(Dispatchers.IO).launch {
-    handler.handle()
-}
-```
-
-
-# Mutex
-- 코루틴 안에서 thread safe 하게 코드 작성하기 위한 장치
+## time_await spurious wakeup 문제
+- 가짜 깨움 문제
+- 정확하게 지정한 시간에 깨지 않고 먼저 깨는 문제 

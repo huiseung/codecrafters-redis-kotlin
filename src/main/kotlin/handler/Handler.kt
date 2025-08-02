@@ -2,11 +2,7 @@ package handler
 
 import Connection
 import ConnectionType
-import StorageService
-import handler.command.BasicCommandHandler
 import handler.command.CommandHandler
-import handler.command.ListCommandHandler
-import handler.command.StringCommandHandler
 import protocol.CommandReader
 import protocol.CommandResultWriter
 import java.lang.IllegalArgumentException
@@ -22,7 +18,7 @@ class Handler(
         Connection(clientSocket, ConnectionType.TO_NORMAL)
     }
 
-    suspend fun handle() {
+    fun handle() {
         connection.clientSocket.use {
             while (true) {
                 when (connection.connectionType) {
