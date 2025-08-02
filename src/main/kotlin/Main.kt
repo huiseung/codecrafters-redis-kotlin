@@ -31,8 +31,6 @@ fun main(args: Array<String>) {
         ListCommandHandler(storageService, commandResultWriter),
     )
 
-
-
     serverSocket.use {
         serverSocket.reuseAddress = true
         while (true) {
