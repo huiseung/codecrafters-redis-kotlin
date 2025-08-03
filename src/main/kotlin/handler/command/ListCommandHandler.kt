@@ -3,7 +3,6 @@ package handler.command
 import Connection
 import StorageService
 import protocol.CommandResultWriter
-import java.util.LinkedList
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.Condition
@@ -17,8 +16,6 @@ class ListCommandHandler(
 ) : CommandHandler {
     private val handleCmds = setOf("RPUSH", "LRANGE", "LPUSH", "LLEN", "LPOP", "BLPOP")
     private val lock = ReentrantLock()
-
-    //private val condition: Condition = lock.newCondition()
     private val queues = ConcurrentHashMap<String, Condition>()
 
     override fun isHandle(cmd: String): Boolean {
@@ -36,7 +33,6 @@ class ListCommandHandler(
         }
     }
 
-
     private fun rpush(connection: Connection) {
         lock.lock()
         try {
@@ -44,9 +40,7 @@ class ListCommandHandler(
             val values = connection.args.drop(1)
             val list = storageService.getOrCreateList(key)
             list.addAll(values)
-            queues[key]?.let { cond ->
-                cond.signal()
-            }
+            queues[key]?.signal()
             commandResultWriter.writeInteger(connection, list.size)
         } finally {
             lock.unlock()
@@ -133,20 +127,12 @@ class ListCommandHandler(
                 commandResultWriter.writeArrayOfBulkString(connection, listOf(key, value))
                 return
             }
-            // val condition = lock.newCondition()
-//            val queue = queues.getOrPut(key) { LinkedList() }
-//            queue.add(condition)
             val condition = queues.getOrPut(key) { lock.newCondition() }
-
             while (true) {
                 val remainMs = if (timeoutMs == 0L) 0 else timeoutMs - (System.currentTimeMillis() - startTime)
                 if (timeoutMs == 0L) {
                     condition.await()
                 } else if (remainMs <= 0 || !condition.await(remainMs, TimeUnit.MILLISECONDS)) {
-//                    queue.remove(condition)
-//                    if (queue.isEmpty()) {
-//                        queues.remove(key)
-//                    }
                     commandResultWriter.writeNIL(connection)
                     return
                 }
