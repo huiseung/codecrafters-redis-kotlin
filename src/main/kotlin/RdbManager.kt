@@ -51,15 +51,16 @@ class RdbManager(
         val dbIndex = fis.read()
 
         val tableSizeFlag = fis.read()
-        val numOfNonExpiryKey = fis.read()
+        val numOfKey = fis.read()
         val numOfExpiryKey = fis.read()
 
-        repeat(numOfNonExpiryKey) {
+        repeat(numOfKey-numOfExpiryKey) {
             val valueEncodeType = fis.read()
             var key: String = parseKey(fis)
             var value = parseStringValue(fis)
             storageService.setString(key, value, null)
         }
+
         repeat(numOfExpiryKey)
         {
             var timeMs = parseExpiryTime(fis)

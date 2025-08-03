@@ -51,10 +51,6 @@ class BasicCommandHandler(
     private fun keys(connection: Connection) {
         val value = connection.args[0]
         val ret = storageService.keys(value)
-        println("${ret.size}")
-        ret.forEach{it ->
-            println(it)
-        }
         commandResultWriter.writeArrayOfBulkString(connection, ret)
     }
 }

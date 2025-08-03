@@ -73,10 +73,6 @@ FB // 테이블 사이즈
 03 // size encode: 만료 시간 없이 저장된 키 숫자
 02 // size encode: 만료 시간 지정된 키 숫자
 
-// 만료 시간 없이 저장된 키 숫자 만큼 반복
-00   // value를 string encode 
-06 66 6F 6F 62 61 72 // string encode: key
-06 62 61 7A 71 75 78 // string encode: value
 
 // 만료 시간 지정된 키 숫자 만큼 반복
 FC // 만료 시간 지정 된 키 정보 ms
@@ -90,6 +86,12 @@ FD // 만료 시간 지정 된 키 정보 sec
 00 // value 를 string encode
 03 62 61 7A // key
 03 71 75 78 // value
+
+// 만료 시간 없이 저장된 키 숫자 만큼 반복
+00   // value를 string encode 
+06 66 6F 6F 62 61 72 // string encode: key
+06 62 61 7A 71 75 78 // string encode: value
+
 ```
 
 ## end of file section
