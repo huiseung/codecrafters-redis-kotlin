@@ -2,6 +2,7 @@ package protocol
 
 import model.*
 import network.Connection
+import java.nio.charset.StandardCharsets.UTF_8
 
 class CommandResultWriter(
 ) {
@@ -14,7 +15,7 @@ class CommandResultWriter(
 
     fun writeBulkString(connection: Connection, value: String) {
         val writer = connection.getBufferedWriter()
-        writer.write("${RESP.bulkString}${value.toByteArray().size}${RESP.crlf}")
+        writer.write("${RESP.bulkString}${value.toByteArray(UTF_8).size}${RESP.crlf}")
         writer.write("${value}${RESP.crlf}")
         writer.flush()
     }
@@ -23,7 +24,7 @@ class CommandResultWriter(
         val writer = connection.getBufferedWriter()
         writer.write("${RESP.array}${values.size}${RESP.crlf}")
         for(value in values){
-            writer.write("${RESP.bulkString}${value.toByteArray().size}${RESP.crlf}")
+            writer.write("${RESP.bulkString}${value.toByteArray(UTF_8).size}${RESP.crlf}")
             writer.write("${value}${RESP.crlf}")
         }
         writer.flush()
