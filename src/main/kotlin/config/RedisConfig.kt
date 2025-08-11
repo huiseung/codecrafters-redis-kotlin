@@ -6,6 +6,8 @@ class RedisConfig(
     fun initConfig(args: Array<String>) {
         var idx = 0
         config["port"] = "6379"
+        config["role"] = "master"
+
         while(idx < args.size){
             if(args[idx] == "--dir"){
                 idx += 1
@@ -18,6 +20,7 @@ class RedisConfig(
             if(args[idx] == "--port"){
                 idx += 1
                 config["port"] = args[idx]
+                config["role"] = "slave"
             }
             idx += 1
         }

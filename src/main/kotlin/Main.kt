@@ -2,6 +2,7 @@ import config.RedisConfig
 import handler.Handler
 import handler.command.BasicCommandHandler
 import handler.command.ListCommandHandler
+import handler.command.ReplicaCommandHandler
 import handler.command.StringCommandHandler
 import persistence.RdbManager
 import protocol.CommandReader
@@ -33,6 +34,7 @@ fun main(args: Array<String>) {
         BasicCommandHandler(commandResultWriter, redisConfig, storageService),
         StringCommandHandler(storageService, commandResultWriter),
         ListCommandHandler(storageService, commandResultWriter),
+        ReplicaCommandHandler(redisConfig, commandResultWriter),
     )
 
     serverSocket.use {

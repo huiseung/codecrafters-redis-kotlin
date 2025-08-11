@@ -2,9 +2,14 @@
 - 실행 파라미터 --port 6380 로 포트 설정
 - default 6379
 
+# info command
 
-# Replica
-## Full Resynchronization
+```
+
+```
+
+
+# Full Resynchronization
 ### 전송 과정
 ```
 Replica -> Master: PSYNC
