@@ -1,23 +1,27 @@
+import config.RedisConfig
 import handler.Handler
 import handler.command.BasicCommandHandler
 import handler.command.ListCommandHandler
 import handler.command.StringCommandHandler
+import persistence.RdbManager
 import protocol.CommandReader
 import protocol.CommandResultWriter
+import storage.StorageService
 import java.net.ServerSocket
 import kotlin.concurrent.thread
 
 fun main(args: Array<String>) {
     // You can use print statements as follows for debugging, they'll be visible when running tests.
     System.err.println("Logs from your program will appear here!")
+    val redisConfig = RedisConfig()
+    redisConfig.initConfig(args)
 
     // Uncomment this block to pass the first stage
-    val serverSocket = ServerSocket(6379)
+    val serverSocket = ServerSocket(redisConfig.get("port")!!.toInt())
     //
     // // Since the tester restarts your program quite often, setting SO_REUSEADDR
     // // ensures that we don't run into 'Address already in use' errors
-    val redisConfig = RedisConfig()
-    redisConfig.initConfig(args)
+
 
     val storageService = StorageService()
     val rdbManager = RdbManager(redisConfig, storageService)

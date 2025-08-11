@@ -1,3 +1,7 @@
+# port 설정
+- 실행 파라미터 --port 6380 로 포트 설정
+- default 6379
+
 
 # Replica
 ## Full Resynchronization
