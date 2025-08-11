@@ -1,8 +1,8 @@
 package handler.command
 
 import Connection
-import RedisConfig
-import StorageService
+import config.RedisConfig
+import storage.StorageService
 import protocol.CommandResultWriter
 
 class BasicCommandHandler(

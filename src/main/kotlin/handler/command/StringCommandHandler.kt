@@ -1,7 +1,7 @@
 package handler.command
 
 import Connection
-import StorageService
+import storage.StorageService
 import protocol.CommandResultWriter
 
 class StringCommandHandler(

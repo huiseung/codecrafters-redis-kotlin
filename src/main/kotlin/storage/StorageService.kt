@@ -1,4 +1,4 @@
-
+package storage
 import model.Entry
 import model.RedisObject
 import java.util.*

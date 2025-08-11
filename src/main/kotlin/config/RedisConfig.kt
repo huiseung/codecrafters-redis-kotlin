@@ -1,8 +1,11 @@
+package config
+
 class RedisConfig(
     val config: MutableMap<String, String> = mutableMapOf<String, String>()
 ) {
     fun initConfig(args: Array<String>) {
         var idx = 0
+        config["port"] = "6379"
         while(idx < args.size){
             if(args[idx] == "--dir"){
                 idx += 1
@@ -11,6 +14,10 @@ class RedisConfig(
             if(args[idx] == "--dbfilename"){
                 idx += 1
                 config["dbfilename"] = args[idx]
+            }
+            if(args[idx] == "--port"){
+                idx += 1
+                config["port"] = args[idx]
             }
             idx += 1
         }
