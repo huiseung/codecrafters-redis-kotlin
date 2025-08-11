@@ -1,7 +1,7 @@
 package protocol
 
-import Connection
 import model.RESP
+import network.Connection
 import java.io.InputStreamReader
 import java.lang.IllegalArgumentException
 import java.lang.StringBuilder

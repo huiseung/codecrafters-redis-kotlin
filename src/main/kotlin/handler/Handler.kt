@@ -1,11 +1,10 @@
 package handler
 
-import Connection
-import ConnectionType
 import handler.command.CommandHandler
+import network.Connection
+import network.ConnectionType
 import protocol.CommandReader
 import protocol.CommandResultWriter
-import java.lang.IllegalArgumentException
 import java.net.Socket
 
 class Handler(

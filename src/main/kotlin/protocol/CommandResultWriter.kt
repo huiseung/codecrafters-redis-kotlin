@@ -1,7 +1,7 @@
 package protocol
 
-import Connection
 import model.*
+import network.Connection
 
 class CommandResultWriter(
 ) {

@@ -1,6 +1,6 @@
 package handler.command
 
-import Connection
+import network.Connection
 import storage.StorageService
 import protocol.CommandResultWriter
 import java.util.concurrent.ConcurrentHashMap

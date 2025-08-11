@@ -1,6 +1,7 @@
 package handler.command
 
-import Connection
+import network.Connection
+
 
 interface CommandHandler {
     fun isHandle(cmd: String): Boolean

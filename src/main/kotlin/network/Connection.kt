@@ -1,3 +1,5 @@
+package network
+
 import java.io.BufferedWriter
 import java.io.InputStream
 import java.io.InputStreamReader

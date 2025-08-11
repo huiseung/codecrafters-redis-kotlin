@@ -1,7 +1,7 @@
 package handler.command
 
-import Connection
 import config.RedisConfig
+import network.Connection
 import protocol.CommandResultWriter
 
 class ReplicaCommandHandler(
