@@ -14,7 +14,6 @@ fun parseKey(fis: FileInputStream): String {
 
 fun parseStringValue(fis: FileInputStream): String {
     val firstByte = fis.read()
-    println("first: $firstByte")
     val top2Bits = (firstByte shr 6) and 0b11
     return if (top2Bits == 0b11) {
         parsing11(fis, firstByte).toString()
