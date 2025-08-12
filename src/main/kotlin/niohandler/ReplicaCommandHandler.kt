@@ -23,7 +23,8 @@ class ReplicaCommandHandler(
     private fun info(connection: ConnectionCtx, args: List<String>) {
         val key = args[0]
         if (key == "replication") {
-            connection.writeBulkString("role:${config.get("role")}")
+            val replid = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb"
+            connection.writeBulkString("role:${config.get("role")}\r\nmaster_replid:$replid\r\nmaster_repl_offset:0")
         }
     }
 }
