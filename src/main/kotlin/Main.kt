@@ -9,6 +9,7 @@ import protocol.RespWriter
 import replica.ReplicaService
 import storage.StorageService
 import storage.WaiterService
+import java.nio.channels.Selector
 
 fun main(args: Array<String>) {
     val redisConfig = RedisConfig()
@@ -28,10 +29,11 @@ fun main(args: Array<String>) {
         ReplicaCommandHandler(redisConfig, respWriter)
     )
 
-    val replicaService = ReplicaService(redisConfig, respWriter)
+    val selector = Selector.open()
+    val replicaService = ReplicaService(redisConfig, respWriter, selector)
     replicaService.run()
 
-    val mainEventLoop = MainEventLoop(redisConfig, commandHandlers, waiterService, replicaService)
+    val mainEventLoop = MainEventLoop(redisConfig, commandHandlers, waiterService, replicaService, selector)
     mainEventLoop.init()
 
     mainEventLoop.run()

@@ -16,6 +16,36 @@ master_repl_offset:0
 ```
 
 # handshake
+## PING
+
+```
+
+```
+
+## REPLCONF 
+- 2번의 replconf 명령어 요청을 보낸다
+
+- request
+```
+*3\r\n$8\r\nREPLCONF\r\n$14\r\nlistening-port\r\n$4\r\n6380\r\n
+```
+- response
+```
++OK\r\n
+```
+
+
+- request
+```
+REPLCONF capa psync2
+```
+
+- response
+```
++OK\r\n
+```
+
+
 
 
 

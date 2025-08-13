@@ -20,7 +20,7 @@ class MainEventLoop(
     private val commandHandlers: List<CommandHandler>,
     private val waiterService: WaiterService,
     private val replicaService: ReplicaService,
-    private val selector: Selector = Selector.open(),
+    private val selector: Selector,
     private val serverChannel: ServerSocketChannel = ServerSocketChannel.open(),
     private val shareReadBuffer: ByteBuffer = ByteBuffer.allocateDirect(64 * 1024),
     private val respReader: RespReader = RespReader()
