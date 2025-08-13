@@ -1,6 +1,7 @@
 package niohandler
 
 import network.ConnectionCtx
+import protocol.RespWriter
 import storage.StorageService
 import storage.Waiter
 import storage.WaiterService
@@ -9,6 +10,7 @@ import kotlin.math.min
 class ListCommandHandler(
     private val storageService: StorageService,
     private val waiterService: WaiterService,
+    private val respWriter: RespWriter,
 ) : CommandHandler {
     private val handleCmds = setOf("RPUSH", "LRANGE", "LPUSH", "LLEN", "LPOP", "BLPOP")
 
@@ -34,7 +36,7 @@ class ListCommandHandler(
         val values = args.drop(1)
         val list = storageService.getOrCreateList(key)
         list.addAll(values)
-        connection.writeInteger(list.size)
+        connection.writeBuffer(respWriter.writeInteger(list.size))
         deliverToWaiters(key)
     }
 
@@ -45,7 +47,7 @@ class ListCommandHandler(
         for (value in values) {
             list.add(0, value)
         }
-        connection.writeInteger(list.size)
+        connection.writeBuffer(respWriter.writeInteger(list.size))
     }
 
     private fun lrange(connection: ConnectionCtx, args: List<String>) {
@@ -54,7 +56,7 @@ class ListCommandHandler(
         var end = args[2].toInt()
         val list = storageService.getList(key)
         if (list == null) {
-            connection.writeEmptyArray()
+            connection.writeBuffer(respWriter.writeEmptyArray())
             return
         }
         if (start < 0) {
@@ -70,7 +72,7 @@ class ListCommandHandler(
             }
         }
         if (start >= list.size) {
-            connection.writeEmptyArray()
+            connection.writeBuffer(respWriter.writeEmptyArray())
             return
         }
         end = min(end, list.size - 1)
@@ -78,20 +80,20 @@ class ListCommandHandler(
         for (idx in start..end) {
             ret.add(list[idx])
         }
-        connection.writeArrayOfBulkString(ret)
+        connection.writeBuffer(respWriter.writeArrayOfBulkString(ret))
     }
 
     private fun llen(connection: ConnectionCtx, args: List<String>) {
         val key = args[0]
         val list = storageService.getList(key)
-        connection.writeInteger(list?.size ?: 0)
+        connection.writeBuffer(respWriter.writeInteger(list?.size ?: 0))
     }
 
     private fun lpop(connection: ConnectionCtx, args: List<String>) {
         val key = args[0]
         val list = storageService.getList(key)
         if (list == null) {
-            connection.writeNil()
+            connection.writeBuffer(respWriter.writeNil())
             return
         }
         val count = min(list.size, if (args.size > 1) args[1].toInt() else 1)
@@ -100,10 +102,10 @@ class ListCommandHandler(
             ret.add(list.pollFirst())
         }
         if (ret.size == 1) {
-            connection.writeBulkString(ret[0])
+            connection.writeBuffer(respWriter.writeBulkString(ret[0]))
             return
         }
-        connection.writeArrayOfBulkString(ret)
+        connection.writeBuffer(respWriter.writeArrayOfBulkString(ret))
     }
 
     private fun blpop(connection: ConnectionCtx, args: List<String>) {
@@ -112,7 +114,7 @@ class ListCommandHandler(
         val list = storageService.getList(key)
         if (!list.isNullOrEmpty()) {
             val value = list.pollFirst()
-            connection.writeArrayOfBulkString(listOf(key, value))
+            connection.writeBuffer(respWriter.writeArrayOfBulkString(listOf(key, value)))
             return
         }
         val now = System.currentTimeMillis()
@@ -129,7 +131,7 @@ class ListCommandHandler(
         while (list.isNotEmpty() && q.isNotEmpty()) {
             val waiter = q.removeFirst()
             val value = list.removeFirst()
-            waiter.connection.writeArrayOfBulkString(listOf(key, value))
+            waiter.connection.writeBuffer(respWriter.writeArrayOfBulkString(listOf(key, value)))
             waiter.connection.enableReadInterest()
         }
         if (q.isEmpty()) {

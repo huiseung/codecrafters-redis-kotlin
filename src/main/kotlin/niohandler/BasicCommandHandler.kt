@@ -2,11 +2,13 @@ package niohandler
 
 import config.RedisConfig
 import network.ConnectionCtx
+import protocol.RespWriter
 import storage.StorageService
 
 class BasicCommandHandler(
     private val config: RedisConfig,
     private val storageService: StorageService,
+    private val respWriter: RespWriter,
 ) : CommandHandler {
     private val cmds = setOf("PING", "ECHO", "CONFIG", "KEYS")
     override fun isHandle(cmd: String): Boolean {
@@ -25,11 +27,11 @@ class BasicCommandHandler(
     }
 
     private fun ping(connectionCtx: ConnectionCtx) {
-        connectionCtx.writeSimpleString("PONG")
+        connectionCtx.writeBuffer(respWriter.writeSimpleString("PONG"))
     }
 
     private fun echo(connectionCtx: ConnectionCtx, args: List<String>) {
-        connectionCtx.writeBulkString(args[0])
+        connectionCtx.writeBuffer(respWriter.writeBulkString(args[0]))
     }
 
     private fun config(connectionCtx: ConnectionCtx, args: List<String>) {
@@ -41,7 +43,7 @@ class BasicCommandHandler(
                 val ret = mutableListOf<String>()
                 ret.add(param)
                 ret.add(value)
-                connectionCtx.writeArrayOfBulkString(ret)
+                connectionCtx.writeBuffer(respWriter.writeArrayOfBulkString(ret))
             }
         }
     }
@@ -49,6 +51,6 @@ class BasicCommandHandler(
     private fun keys(connectionCtx: ConnectionCtx, args: List<String>) {
         val value = args[0]
         val ret = storageService.keys(value)
-        connectionCtx.writeArrayOfBulkString(ret)
+        connectionCtx.writeBuffer(respWriter.writeArrayOfBulkString(ret))
     }
 }

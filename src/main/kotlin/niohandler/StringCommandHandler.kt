@@ -1,10 +1,12 @@
 package niohandler
 
 import network.ConnectionCtx
+import protocol.RespWriter
 import storage.StorageService
 
 class StringCommandHandler(
     private val storageService: StorageService,
+    private val respWriter: RespWriter,
 ) : CommandHandler {
     private val cmds = setOf("SET", "GET")
 
@@ -29,16 +31,16 @@ class StringCommandHandler(
         } else {
             storageService.setString(key, value, null)
         }
-        connectionCtx.writeSimpleString("OK")
+        connectionCtx.writeBuffer(respWriter.writeSimpleString("OK"))
     }
 
     private fun get(connectionCtx: ConnectionCtx, args: List<String>) {
         val key = args[0]
         val value = storageService.getString(key)
-        if(value != null){
-            connectionCtx.writeBulkString(value)
+        if (value != null) {
+            connectionCtx.writeBuffer(respWriter.writeBulkString(value))
             return
         }
-        connectionCtx.writeNil()
+        connectionCtx.writeBuffer(respWriter.writeNil())
     }
 }

@@ -15,6 +15,9 @@ master_repid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb
 master_repl_offset:0
 ```
 
+# handshake
+
+
 
 # Full Resynchronization
 ### 전송 과정

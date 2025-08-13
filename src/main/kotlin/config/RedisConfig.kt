@@ -8,19 +8,25 @@ class RedisConfig(
         config["port"] = "6379"
         config["role"] = "master"
 
-        while(idx < args.size){
-            if(args[idx] == "--dir"){
+        while (idx < args.size) {
+            if (args[idx] == "--dir") {
                 idx += 1
                 config["dir"] = args[idx]
             }
-            if(args[idx] == "--dbfilename"){
+            if (args[idx] == "--dbfilename") {
                 idx += 1
                 config["dbfilename"] = args[idx]
             }
-            if(args[idx] == "--port"){
+            if (args[idx] == "--port") {
                 idx += 1
                 config["port"] = args[idx]
                 config["role"] = "slave"
+            }
+            if (args[idx] == "--replicaof") {
+                idx += 1
+                val ret = args[idx].split(" ")
+                config["master_host"] = ret[0]
+                config["master_port"] = ret[1]
             }
             idx += 1
         }

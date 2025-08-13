@@ -2,9 +2,11 @@ package niohandler
 
 import config.RedisConfig
 import network.ConnectionCtx
+import protocol.RespWriter
 
 class ReplicaCommandHandler(
     private val config: RedisConfig,
+    private val respWriter: RespWriter,
 ) : CommandHandler {
     private val cmds = setOf("INFO")
 
@@ -24,7 +26,7 @@ class ReplicaCommandHandler(
         val key = args[0]
         if (key == "replication") {
             val replid = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb"
-            connection.writeBulkString("role:${config.get("role")}\r\nmaster_replid:$replid\r\nmaster_repl_offset:0")
+            connection.writeBuffer(respWriter.writeBulkString("role:${config.get("role")}\r\nmaster_replid:$replid\r\nmaster_repl_offset:0"))
         }
     }
 }

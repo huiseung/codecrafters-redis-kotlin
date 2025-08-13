@@ -1,6 +1,7 @@
 package storage
 
 import network.ConnectionCtx
+import protocol.RespWriter
 
 
 data class Waiter(
@@ -8,7 +9,9 @@ data class Waiter(
     val remains: Long?,
 )
 
-class WaiterService {
+class WaiterService(
+    private val respWriter: RespWriter,
+) {
     private val queues: MutableMap<String, ArrayDeque<Waiter>> = mutableMapOf()
 
     fun register(key: String, waiter: Waiter) {
@@ -32,7 +35,7 @@ class WaiterService {
                 val waiter = it.next()
                 if (waiter.remains != null && waiter.remains <= now) {
                     it.remove()
-                    waiter.connection.writeNil()
+                    waiter.connection.writeBuffer(respWriter.writeNil())
                     waiter.connection.enableReadInterest()
                 }
             }

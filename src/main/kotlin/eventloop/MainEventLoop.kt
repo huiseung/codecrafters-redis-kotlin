@@ -5,6 +5,7 @@ import network.ConnectionCtx
 import network.ConnectionType
 import niohandler.CommandHandler
 import protocol.RespReader
+import replica.ReplicaService
 import storage.WaiterService
 import java.lang.Exception
 import java.net.InetSocketAddress
@@ -18,6 +19,7 @@ class MainEventLoop(
     private val config: RedisConfig,
     private val commandHandlers: List<CommandHandler>,
     private val waiterService: WaiterService,
+    private val replicaService: ReplicaService,
     private val selector: Selector = Selector.open(),
     private val serverChannel: ServerSocketChannel = ServerSocketChannel.open(),
     private val shareReadBuffer: ByteBuffer = ByteBuffer.allocateDirect(64 * 1024),
