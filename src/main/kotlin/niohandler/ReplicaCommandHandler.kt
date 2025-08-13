@@ -41,7 +41,17 @@ class ReplicaCommandHandler(
     }
 
     private fun replconf(connection: ConnectionCtx, args: List<String>) {
-        connection.writeBuffer(respWriter.writeSimpleString("OK"))
+        if (args.isNotEmpty()) {
+            when(args[0].uppercase()){
+                "GETACK" -> {
+                    connection.writeBuffer(respWriter.writeArrayOfBulkString(listOf("REPLCONF", "ACK", "0")))
+                }
+                "LISTENING-PORT", "CAPA" -> {
+                    connection.writeBuffer(respWriter.writeSimpleString("OK"))
+                }
+
+            }
+        }
     }
 
     private fun psync(connection: ConnectionCtx, args: List<String>) {

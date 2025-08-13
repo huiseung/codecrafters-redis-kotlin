@@ -79,9 +79,14 @@ ${file_size}\r\n
     - Recive_RDB 타입은 rdb file 파싱
 
 
-## Write Synchronization
+# Write Synchronization
 - Master의 쓰기 요청은 Replica로 전송하고 Master에게 결과를 응답하지 않는다
 
 ### 고민 사항
 - 명령어 처리시 일반 Client로 부터 쓰기인지 Master로 부터 쓰기 요청인지 구분하는 방법은?
   - clientSocket 타입을 변경
+
+
+# REPLCONF GETACk
+- master 가 replica 쓰기 명령을 전파할 때 replica는 쓰기 전파에 대한 응답을 master 전송하지 않는다
+- master는 replconf getack 명령어를 replica에게 보내 replica가 처리한 명령 offset을 받아 동기화 상태를 판단한다

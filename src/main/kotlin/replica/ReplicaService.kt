@@ -96,7 +96,7 @@ class ReplicaService(
         val rdbInput = object : InputStream() {
             var remaining = totalLen
             private val tmp = ByteBuffer.allocate(8192).apply {
-                limit(0) // 버퍼가 비어있음을 표시해야 한다: NIO 버퍼 초기화 버그
+                flip()
             }
             override fun read(): Int {
                 val one = ByteArray(1)
