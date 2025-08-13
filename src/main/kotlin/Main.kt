@@ -30,7 +30,7 @@ fun main(args: Array<String>) {
     )
 
     val selector = Selector.open()
-    val replicaService = ReplicaService(redisConfig, respWriter, selector)
+    val replicaService = ReplicaService(redisConfig, respWriter, selector, rdbManager)
     replicaService.run()
 
     val mainEventLoop = MainEventLoop(redisConfig, commandHandlers, waiterService, replicaService, selector)

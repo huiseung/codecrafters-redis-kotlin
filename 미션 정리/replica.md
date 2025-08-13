@@ -57,8 +57,6 @@ REPLCONF capa psync2
 +FULLRESYNC {replId} 0\r\n 
 ```
 
-
-
 # Full Resynchronization
 ### 전송 과정
 ```
@@ -66,7 +64,7 @@ Replica -> Master: PSYNC
 Master -> Replica: FULLRESYNC
 Master: RDB file 생성
 Master -> Replica: RDB file byte stream 
-```[RedisCloneFull.kt](..%2F..%2F..%2FOther_Code%2FRedisCloneFull.kt)
+```
 
 ### RDB file byte stream
 ```
@@ -87,9 +85,3 @@ ${file_size}\r\n
 ### 고민 사항
 - 명령어 처리시 일반 Client로 부터 쓰기인지 Master로 부터 쓰기 요청인지 구분하는 방법은?
   - clientSocket 타입을 변경
-    - normal_connect
-      - 요청에 대해 명령을 처리하고 응답을 쓴다
-    - master_connect
-      - 쓰기 요청에 대해서는 응답을 쓰지 않는다
-    - rdb_receive
-      - 요청 파싱시 rdb file 파싱을 호출한다

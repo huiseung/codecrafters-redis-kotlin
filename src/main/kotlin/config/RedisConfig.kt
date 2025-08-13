@@ -7,6 +7,8 @@ class RedisConfig(
         var idx = 0
         config["port"] = "6379"
         config["role"] = "master"
+        config["dir"] = "/tmp"
+        config["dbfilename"] = "init.rdb"
 
         while (idx < args.size) {
             when(args[idx]){

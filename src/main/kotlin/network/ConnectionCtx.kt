@@ -15,8 +15,6 @@ class ConnectionCtx(
     var readBuffer: ByteBuffer = ByteBuffer.allocate(64 * 1024),
     val writeBufferQueue: ArrayDeque<ByteBuffer> = ArrayDeque<ByteBuffer>(),
 ) {
-    private var pendingBytes: Int = 0
-
     fun feed(shareReadBuffer: ByteBuffer) {
         shareReadBuffer.flip()
         ensureCapa(shareReadBuffer.remaining())

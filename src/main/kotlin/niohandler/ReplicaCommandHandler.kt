@@ -3,6 +3,10 @@ package niohandler
 import config.RedisConfig
 import network.ConnectionCtx
 import protocol.RespWriter
+import java.io.File
+import java.io.FileInputStream
+import java.nio.ByteBuffer
+import java.nio.charset.StandardCharsets.UTF_8
 
 class ReplicaCommandHandler(
     private val config: RedisConfig,
@@ -36,7 +40,27 @@ class ReplicaCommandHandler(
         connection.writeBuffer(respWriter.writeSimpleString("OK"))
     }
 
-    private fun psync(connection: ConnectionCtx, args: List<String>){
-        connection.writeBuffer(respWriter.writeSimpleString("+FULLRESYNC $replid 0"))
+    private fun psync(connection: ConnectionCtx, args: List<String>) {
+        connection.writeBuffer(respWriter.writeSimpleString("FULLRESYNC $replid 0"))
+        val dir = config.get("dir")
+        val dbfilename = config.get("dbfilename")
+        val file = File(dir, dbfilename)
+        if (!file.exists()) return
+        val len = file.length()
+        run {
+            val header = ByteBuffer.wrap(("\$$len\r\n").toByteArray(UTF_8))
+            connection.writeBuffer(header)
+        }
+        FileInputStream(file).channel.use{ch ->
+            val buffer = ByteBuffer.allocate(8192) // 8192 = BufferedInputStream capa default 값
+            while(ch.read(buffer) > 0){
+                buffer.flip()
+                val copy = ByteBuffer.allocate(buffer.remaining())
+                copy.put(buffer)
+                copy.flip()
+                connection.writeBuffer(copy)
+                buffer.clear()
+            }
+        }
     }
 }

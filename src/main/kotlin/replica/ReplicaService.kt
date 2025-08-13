@@ -3,7 +3,10 @@ package replica
 import config.RedisConfig
 import network.ConnectionCtx
 import network.ConnectionType
+import persistence.RdbManager
 import protocol.RespWriter
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.lang.IllegalArgumentException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -16,6 +19,7 @@ class ReplicaService(
     private val config: RedisConfig,
     private val respWriter: RespWriter,
     private val selector: Selector,
+    private val rdbManager: RdbManager,
 ) {
     fun run() {
         if (config.get("role") != "slave") {
@@ -62,6 +66,45 @@ class ReplicaService(
         masterChannel.write(respWriter.writeArrayOfBulkString(listOf("PSYNC", "?", "-1")))
         line = readSimpleLine(masterChannel) ?: throw IllegalArgumentException()
         if (!line.startsWith("+FULLRESYNC")) return
+        handlePsync(masterChannel)
+    }
+
+    private fun handlePsync(masterChannel: SocketChannel){
+        val dollar = readExactly(masterChannel, 1)[0]
+        val lenLine = readLineAscii(masterChannel)
+        val totalLen = lenLine.toLongOrNull() ?: return
+
+        val rdbInput = object : InputStream() {
+            var remaining = totalLen
+            private val tmp = ByteBuffer.allocate(8192)
+            override fun read(): Int {
+                val one = ByteArray(1)
+                val n = read(one, 0, 1)
+                return if (n <= 0) -1 else one[0].toInt() and 0xFF
+            }
+            override fun read(b: ByteArray, off: Int, len: Int): Int {
+                if (remaining <= 0) return -1
+                var toRead = minOf(len.toLong(), remaining).toInt()
+                var filled = 0
+                while (toRead > 0) {
+                    if (!tmp.hasRemaining()) {
+                        tmp.clear()
+                        val n = masterChannel.read(tmp)
+                        if (n < 0) error("EOF from master while receiving RDB")
+                        if (n == 0) continue
+                        tmp.flip()
+                    }
+                    val n = minOf(tmp.remaining(), toRead)
+                    tmp.get(b, off + filled, n)
+                    filled += n
+                    toRead -= n
+                    remaining -= n
+                }
+                return filled
+            }
+        }
+
+        rdbManager.loadFromStream(rdbInput)
     }
 
     private fun readSimpleLine(ch: SocketChannel): String? {
@@ -78,6 +121,43 @@ class ReplicaService(
             if (idx >= 0) {
                 return out.substring(0, idx)
             }
+        }
+    }
+
+    private fun readExactly(ch: SocketChannel, n: Int): ByteArray {
+        val out = ByteArray(n)
+        var off = 0
+        val buf = ByteBuffer.allocate(n)
+        while (off < n) {
+            val r = ch.read(buf)
+            if (r < 0) throw IllegalStateException("EOF from master while reading $n bytes")
+            if (r == 0) continue
+            buf.flip()
+            val got = buf.remaining()
+            buf.get(out, off, got)
+            off += got
+            buf.clear()
+        }
+        return out
+    }
+
+    private fun readLineAscii(ch: SocketChannel,): String {
+        val baos = ByteArrayOutputStream()
+        var prev = -1
+        val one = ByteBuffer.allocate(1)
+        while (true) {
+            one.clear()
+            val r = ch.read(one)
+            if (r < 0) throw IllegalStateException("EOF from master while reading line")
+            if (r == 0) continue
+            one.flip()
+            val b = one.get().toInt() and 0xFF
+            if (prev == '\r'.code && b == '\n'.code) {
+                val bytes = baos.toByteArray()
+                return String(bytes, 0, bytes.size - 1, Charsets.US_ASCII)
+            }
+            baos.write(b)
+            prev = b
         }
     }
 }
