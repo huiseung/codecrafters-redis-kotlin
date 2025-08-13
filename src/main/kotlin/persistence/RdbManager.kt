@@ -8,6 +8,11 @@ import java.io.FileOutputStream
 import java.io.InputStream
 import java.util.*
 
+private const val DEBUG_RDB = false
+private inline fun dbg(msg: () -> String) {
+    if (DEBUG_RDB) println("[RDB] ${msg()}")
+}
+
 class RdbManager(
     private val redisConfig: RedisConfig,
     private val storageService: StorageService,
@@ -29,10 +34,14 @@ class RdbManager(
     }
 
     fun loadFromStream(input: InputStream) {
+        dbg { "enter loadFromStream()" }
+
         metadataTerminator = -1
         readHeaderSection(input)
         readMetadataSection(input)
+        dbg { "metadata section done; terminator=0x${metadataTerminator.toString(16)}" }
         readDataBaseSection(input)
+        dbg { "database section done" }
         readEndOfFile(input)
     }
 
@@ -45,6 +54,8 @@ class RdbManager(
 
     private fun readHeaderSection(fis: InputStream) {
         val header = fis.readNBytes(9)
+        dbg { "header raw: ${header.joinToString(" ") { "%02X".format(it) }}" }
+        dbg { "header text: ${String(header)}" }
     }
 
     private fun readMetadataSection(fis: InputStream) {
@@ -55,13 +66,17 @@ class RdbManager(
             }
             when (byte) {
                 0xFA -> {
-                    parseStringValue(fis)
-                    parseStringValue(fis)
+                    val k = parseStringValue(fis).also { dbg { "AUX key='$it'" } }
+                    val v = parseStringValue(fis).also { dbg { "AUX val='$it'" } }
                 }
 
                 0xFE, 0xFF -> {
                     metadataTerminator = byte
+                    dbg { "metadata terminator=0x${byte.toString(16)}" }
                     return
+                }
+                else -> {
+                    dbg { "metadata: unknown byte=0x${byte.toString(16)} (skip?)" }
                 }
             }
         }

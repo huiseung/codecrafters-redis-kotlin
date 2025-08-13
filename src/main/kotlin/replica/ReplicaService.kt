@@ -63,7 +63,7 @@ class ReplicaService(
 
     private fun handshake(masterChannel: SocketChannel) {
         masterChannel.write(respWriter.writeArrayOfBulkString(listOf("PING")))
-        var line = readSimpleLine(masterChannel) ?: return
+        var line = readLineAscii(masterChannel) ?: return
         if (line != "+PONG") return
 
         masterChannel.write(
@@ -75,15 +75,15 @@ class ReplicaService(
                 )
             )
         )
-        line = readSimpleLine(masterChannel) ?: throw IllegalArgumentException()
+        line = readLineAscii(masterChannel) ?: throw IllegalArgumentException()
         if (line != "+OK") return
 
         masterChannel.write(respWriter.writeArrayOfBulkString(listOf("REPLCONF", "capa", "psync2")))
-        line = readSimpleLine(masterChannel) ?: throw IllegalArgumentException()
+        line = readLineAscii(masterChannel) ?: throw IllegalArgumentException()
         if (line != "+OK") return
 
         masterChannel.write(respWriter.writeArrayOfBulkString(listOf("PSYNC", "?", "-1")))
-        line = readSimpleLine(masterChannel) ?: throw IllegalArgumentException()
+        line = readLineAscii(masterChannel) ?: throw IllegalArgumentException()
         if (!line.startsWith("+FULLRESYNC")) return
         handlePsync(masterChannel)
     }
@@ -95,7 +95,9 @@ class ReplicaService(
 
         val rdbInput = object : InputStream() {
             var remaining = totalLen
-            private val tmp = ByteBuffer.allocate(8192)
+            private val tmp = ByteBuffer.allocate(8192).apply {
+                limit(0) // 버퍼가 비어있음을 표시해야 한다: NIO 버퍼 초기화 버그
+            }
             override fun read(): Int {
                 val one = ByteArray(1)
                 val n = read(one, 0, 1)
@@ -109,9 +111,10 @@ class ReplicaService(
                 while (toRead > 0) {
                     if (!tmp.hasRemaining()) {
                         tmp.clear()
+                        val maxChunk = minOf(tmp.capacity().toLong(), remaining).toInt()
+                        tmp.limit(maxChunk)
                         val n = masterChannel.read(tmp)
-                        if (n < 0) error("EOF from master while receiving RDB")
-                        if (n == 0) continue
+                        if (n < 0) return if (filled > 0) filled else -1
                         tmp.flip()
                     }
                     val n = minOf(tmp.remaining(), toRead)
@@ -125,23 +128,6 @@ class ReplicaService(
         }
 
         rdbManager.loadFromStream(rdbInput)
-    }
-
-    private fun readSimpleLine(ch: SocketChannel): String? {
-        val buf = ByteBuffer.allocate(8 * 1024)
-        val out = StringBuilder()
-        while (true) {
-            buf.clear()
-            val n = ch.read(buf)
-            if (n <= 0) return null
-            buf.flip()
-            val s = StandardCharsets.UTF_8.decode(buf).toString()
-            out.append(s)
-            val idx = out.indexOf("\r\n")
-            if (idx >= 0) {
-                return out.substring(0, idx)
-            }
-        }
     }
 
     private fun readExactly(ch: SocketChannel, n: Int): ByteArray {

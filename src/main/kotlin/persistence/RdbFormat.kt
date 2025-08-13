@@ -1,6 +1,5 @@
 package persistence
 
-import java.io.FileInputStream
 import java.io.InputStream
 import java.lang.IllegalArgumentException
 
@@ -20,15 +19,6 @@ fun parseStringValue(fis: InputStream): String {
         parsing11(fis, firstByte).toString()
     } else {
         String(getByteArray(fis, top2Bits, firstByte), Charsets.UTF_8)
-    }
-}
-
-fun parseExpiryTime(fis: InputStream): Long {
-    val timeType = fis.read()
-    return when (timeType) {
-        0xFC -> readLongByLittle(fis)
-        0xFD -> readIntByLittle(fis).toLong() * 1000
-        else -> throw IllegalArgumentException()
     }
 }
 
