@@ -11,9 +11,13 @@ class ReplicaService(
     private val respWriter: RespWriter,
 ) {
     fun run() {
-        if (config.get("role") == "slave") {
-            val masterChannel = connectToMaster()
+        if (config.get("role") != "slave") {
+            return
         }
+        if (config.get("master_host") == null || config.get("master_port") == null) {
+            return
+        }
+        val masterChannel = connectToMaster()
     }
 
     private fun connectToMaster(): SocketChannel {
