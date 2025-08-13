@@ -6,7 +6,7 @@ import java.nio.channels.SelectionKey
 enum class ConnectionType {
     FOR_NORMAL,
     FOR_MASTER,
-    FOR_FULLSYNC
+    FOR_REPLICA,
 }
 
 class ConnectionCtx(

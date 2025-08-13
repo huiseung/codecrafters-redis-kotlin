@@ -2,7 +2,9 @@ package niohandler
 
 import config.RedisConfig
 import network.ConnectionCtx
+import network.ConnectionType
 import protocol.RespWriter
+import replica.ReplicaService
 import java.io.File
 import java.io.FileInputStream
 import java.nio.ByteBuffer
@@ -11,7 +13,9 @@ import java.nio.charset.StandardCharsets.UTF_8
 class ReplicaCommandHandler(
     private val config: RedisConfig,
     private val respWriter: RespWriter,
-) : CommandHandler {
+    private val replicaService: ReplicaService,
+
+    ) : CommandHandler {
     private val cmds = setOf("INFO", "REPLCONF", "PSYNC")
     private val replid = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb"
 
@@ -51,9 +55,9 @@ class ReplicaCommandHandler(
             val header = ByteBuffer.wrap(("\$$len\r\n").toByteArray(UTF_8))
             connection.writeBuffer(header)
         }
-        FileInputStream(file).channel.use{ch ->
+        FileInputStream(file).channel.use { ch ->
             val buffer = ByteBuffer.allocate(8192) // 8192 = BufferedInputStream capa default 값
-            while(ch.read(buffer) > 0){
+            while (ch.read(buffer) > 0) {
                 buffer.flip()
                 val copy = ByteBuffer.allocate(buffer.remaining())
                 copy.put(buffer)
@@ -62,5 +66,7 @@ class ReplicaCommandHandler(
                 buffer.clear()
             }
         }
+        connection.connectionType = ConnectionType.FOR_REPLICA
+        replicaService.registerReplica(connection)
     }
 }

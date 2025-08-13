@@ -1,12 +1,15 @@
 package niohandler
 
 import network.ConnectionCtx
+import network.ConnectionType
 import protocol.RespWriter
+import replica.ReplicaService
 import storage.StorageService
 
 class StringCommandHandler(
     private val storageService: StorageService,
     private val respWriter: RespWriter,
+    private val replicaService: ReplicaService,
 ) : CommandHandler {
     private val cmds = setOf("SET", "GET")
 
@@ -16,14 +19,14 @@ class StringCommandHandler(
 
     override fun handle(connectionCtx: ConnectionCtx, request: List<String>) {
         val cmd = request[0]
-        val args = request.drop(1)
         when (cmd) {
-            "SET" -> set(connectionCtx, args)
-            "GET" -> get(connectionCtx, args)
+            "SET" -> set(connectionCtx, request)
+            "GET" -> get(connectionCtx, request)
         }
     }
 
-    private fun set(connectionCtx: ConnectionCtx, args: List<String>) {
+    private fun set(connectionCtx: ConnectionCtx, request: List<String>) {
+        val args = request.drop(1)
         val key = args[0]
         val value = args[1]
         if (args.size == 4 && args[2].uppercase() == "PX") {
@@ -31,10 +34,14 @@ class StringCommandHandler(
         } else {
             storageService.setString(key, value, null)
         }
-        connectionCtx.writeBuffer(respWriter.writeSimpleString("OK"))
+        if(connectionCtx.connectionType != ConnectionType.FOR_MASTER){
+            connectionCtx.writeBuffer(respWriter.writeSimpleString("OK"))
+        }
+        replicaService.propagation(request)
     }
 
-    private fun get(connectionCtx: ConnectionCtx, args: List<String>) {
+    private fun get(connectionCtx: ConnectionCtx, request: List<String>) {
+        val args = request.drop(1)
         val key = args[0]
         val value = storageService.getString(key)
         if (value != null) {

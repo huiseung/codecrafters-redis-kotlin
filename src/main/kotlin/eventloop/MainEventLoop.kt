@@ -71,17 +71,9 @@ class MainEventLoop(
         if (!readFromOsToBuffer(clientSocketChannel, key, connection)) {
             return
         }
-        when (connection.connectionType) {
-            ConnectionType.FOR_NORMAL, ConnectionType.FOR_MASTER -> {
-                for (req in respReader.parseRequests(connection)) {
-                    for (commandHandler in commandHandlers) {
-                        if (commandHandler.isHandle(req[0])) commandHandler.handle(connection, req)
-                    }
-                }
-            }
-
-            ConnectionType.FOR_FULLSYNC -> {
-
+        for (req in respReader.parseRequests(connection)) {
+            for (commandHandler in commandHandlers) {
+                if (commandHandler.isHandle(req[0])) commandHandler.handle(connection, req)
             }
         }
     }

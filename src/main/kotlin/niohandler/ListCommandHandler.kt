@@ -2,6 +2,7 @@ package niohandler
 
 import network.ConnectionCtx
 import protocol.RespWriter
+import replica.ReplicaService
 import storage.StorageService
 import storage.Waiter
 import storage.WaiterService
@@ -11,7 +12,9 @@ class ListCommandHandler(
     private val storageService: StorageService,
     private val waiterService: WaiterService,
     private val respWriter: RespWriter,
-) : CommandHandler {
+    private val replicaService: ReplicaService,
+
+    ) : CommandHandler {
     private val handleCmds = setOf("RPUSH", "LRANGE", "LPUSH", "LLEN", "LPOP", "BLPOP")
 
     override fun isHandle(cmd: String): Boolean {

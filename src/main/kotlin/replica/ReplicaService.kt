@@ -21,6 +21,8 @@ class ReplicaService(
     private val selector: Selector,
     private val rdbManager: RdbManager,
 ) {
+    private val replicas = mutableSetOf<ConnectionCtx>()
+
     fun run() {
         if (config.get("role") != "slave") {
             return
@@ -29,6 +31,23 @@ class ReplicaService(
         masterChannel.configureBlocking(false)
         val key = masterChannel.register(selector, SelectionKey.OP_READ)
         key.attach(ConnectionCtx(key, ConnectionType.FOR_MASTER))
+    }
+
+    fun propagation(req: List<String>) {
+        if (config.get("role") != "master") return
+        val payload = respWriter.writeArrayOfBulkString(req)
+        for (repl in replicas) {
+            val dup = payload.duplicate()
+            dup.position(0)
+            dup.limit(payload.limit())
+            repl.writeBuffer(dup)
+        }
+    }
+
+    fun registerReplica(connectionCtx: ConnectionCtx) {
+        if (config.get("role") == "master") {
+            replicas += connectionCtx
+        }
     }
 
     private fun connectToMaster(): SocketChannel {
@@ -69,7 +88,7 @@ class ReplicaService(
         handlePsync(masterChannel)
     }
 
-    private fun handlePsync(masterChannel: SocketChannel){
+    private fun handlePsync(masterChannel: SocketChannel) {
         val dollar = readExactly(masterChannel, 1)[0]
         val lenLine = readLineAscii(masterChannel)
         val totalLen = lenLine.toLongOrNull() ?: return
@@ -82,6 +101,7 @@ class ReplicaService(
                 val n = read(one, 0, 1)
                 return if (n <= 0) -1 else one[0].toInt() and 0xFF
             }
+
             override fun read(b: ByteArray, off: Int, len: Int): Int {
                 if (remaining <= 0) return -1
                 var toRead = minOf(len.toLong(), remaining).toInt()
@@ -130,7 +150,7 @@ class ReplicaService(
         val buf = ByteBuffer.allocate(n)
         while (off < n) {
             val r = ch.read(buf)
-            if (r < 0) throw IllegalStateException("EOF from master while reading $n bytes")
+            if (r < 0) return out
             if (r == 0) continue
             buf.flip()
             val got = buf.remaining()
@@ -141,14 +161,14 @@ class ReplicaService(
         return out
     }
 
-    private fun readLineAscii(ch: SocketChannel,): String {
+    private fun readLineAscii(ch: SocketChannel): String {
         val baos = ByteArrayOutputStream()
         var prev = -1
         val one = ByteBuffer.allocate(1)
         while (true) {
             one.clear()
             val r = ch.read(one)
-            if (r < 0) throw IllegalStateException("EOF from master while reading line")
+            if (r < 0) return ""
             if (r == 0) continue
             one.flip()
             val b = one.get().toInt() and 0xFF

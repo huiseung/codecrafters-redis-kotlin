@@ -21,17 +21,16 @@ fun main(args: Array<String>) {
     val respWriter = RespWriter()
 
     val waiterService = WaiterService(respWriter)
-
-    val commandHandlers = listOf(
-        BasicCommandHandler(redisConfig, storageService, respWriter),
-        StringCommandHandler(storageService, respWriter),
-        ListCommandHandler(storageService, waiterService, respWriter),
-        ReplicaCommandHandler(redisConfig, respWriter)
-    )
-
     val selector = Selector.open()
     val replicaService = ReplicaService(redisConfig, respWriter, selector, rdbManager)
     replicaService.run()
+
+    val commandHandlers = listOf(
+        BasicCommandHandler(redisConfig, storageService, respWriter),
+        StringCommandHandler(storageService, respWriter, replicaService),
+        ListCommandHandler(storageService, waiterService, respWriter, replicaService),
+        ReplicaCommandHandler(redisConfig, respWriter, replicaService)
+    )
 
     val mainEventLoop = MainEventLoop(redisConfig, commandHandlers, waiterService, replicaService, selector)
     mainEventLoop.init()
