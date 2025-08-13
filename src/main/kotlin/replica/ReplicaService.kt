@@ -58,6 +58,10 @@ class ReplicaService(
         masterChannel.write(respWriter.writeArrayOfBulkString(listOf("REPLCONF", "capa", "psync2")))
         line = readSimpleLine(masterChannel) ?: throw IllegalArgumentException()
         if (line != "+OK") return
+
+        masterChannel.write(respWriter.writeArrayOfBulkString(listOf("PSYNC", "?", "-1")))
+        line = readSimpleLine(masterChannel) ?: throw IllegalArgumentException()
+        if (!line.startsWith("+FULLRESYNC")) return
     }
 
     private fun readSimpleLine(ch: SocketChannel): String? {

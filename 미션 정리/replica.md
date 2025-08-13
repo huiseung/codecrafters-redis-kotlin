@@ -45,7 +45,17 @@ REPLCONF capa psync2
 +OK\r\n
 ```
 
+## PSYNC
+- request
+```
+*3\r\n$5\r\nPSYNC\r\n$1\r\n?\r\n$2\r\n-1\r\n
 
+```
+- response
+
+```
++FULLRESYNC {replId} 0\r\n 
+```
 
 
 
