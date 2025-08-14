@@ -101,6 +101,6 @@ class ReplicaCommandHandler(
         val numReplica = args[0]
         val timeout = args[1].toInt()
 
-        connection.writeBuffer(respWriter.writeInteger(0))
+        connection.writeBuffer(respWriter.writeInteger(replicaService.replicas.size))
     }
 }
