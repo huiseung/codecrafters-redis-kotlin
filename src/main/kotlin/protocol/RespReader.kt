@@ -3,16 +3,18 @@ package protocol
 import network.ConnectionCtx
 import java.nio.ByteBuffer
 
+data class Request(val request: List<String>, val bytes: Int)
 class RespReader {
-    fun parseRequests(connection: ConnectionCtx): List<List<String>> {
+    fun parseRequests(connection: ConnectionCtx): List<Request> {
         val readBuffer = connection.readBuffer
         readBuffer.flip()
         val limit = readBuffer.limit()
         var cursor = readBuffer.position()
-        val ret = mutableListOf<MutableList<String>>()
+        val ret = mutableListOf<Request>()
         while (true) {
+            val start = cursor
             val (request, next) = parseArrayOfBulkString(readBuffer, cursor, limit) ?: break
-            ret.add(request)
+            ret.add(Request(request, next - start))
             cursor = next
         }
         readBuffer.position(cursor)
@@ -20,7 +22,7 @@ class RespReader {
         return ret
     }
 
-    private fun parseArrayOfBulkString(readBuffer: ByteBuffer, from: Int, limit: Int): Pair<MutableList<String>, Int>? {
+    private fun parseArrayOfBulkString(readBuffer: ByteBuffer, from: Int, limit: Int): Pair<List<String>, Int>? {
         var cursor = from
         val (data, next) = readLine(readBuffer, cursor, limit) ?: return null
         if (data.isEmpty() || !data.startsWith("*")) return null

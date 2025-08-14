@@ -2,6 +2,7 @@ package niohandler
 
 import config.RedisConfig
 import network.ConnectionCtx
+import network.ConnectionType
 import protocol.RespWriter
 import storage.StorageService
 
@@ -27,6 +28,9 @@ class BasicCommandHandler(
     }
 
     private fun ping(connectionCtx: ConnectionCtx) {
+        if(connectionCtx.connectionType == ConnectionType.FOR_MASTER){
+            return
+        }
         connectionCtx.writeBuffer(respWriter.writeSimpleString("PONG"))
     }
 

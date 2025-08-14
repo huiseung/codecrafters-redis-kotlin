@@ -87,6 +87,9 @@ ${file_size}\r\n
   - clientSocket 타입을 변경
 
 
-# REPLCONF GETACk
+# REPLCONF GETACK
 - master 가 replica 쓰기 명령을 전파할 때 replica는 쓰기 전파에 대한 응답을 master 전송하지 않는다
 - master는 replconf getack 명령어를 replica에게 보내 replica가 처리한 명령 offset을 받아 동기화 상태를 판단한다
+- offset은 replica가 받은 요청들의 resp 표현 바이트 누적값이다
+- master->replica에게 replica가 살아있음 확인 용으로 ping을 보내 응답 기대는 안하고 offset 만 늘리는 요청을 보낼 수 있다
+

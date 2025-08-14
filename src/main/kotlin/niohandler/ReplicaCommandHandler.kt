@@ -42,10 +42,19 @@ class ReplicaCommandHandler(
 
     private fun replconf(connection: ConnectionCtx, args: List<String>) {
         if (args.isNotEmpty()) {
-            when(args[0].uppercase()){
+            when (args[0].uppercase()) {
                 "GETACK" -> {
-                    connection.writeBuffer(respWriter.writeArrayOfBulkString(listOf("REPLCONF", "ACK", "0")))
+                    connection.writeBuffer(
+                        respWriter.writeArrayOfBulkString(
+                            listOf(
+                                "REPLCONF",
+                                "ACK",
+                                "${connection.replOffset}"
+                            )
+                        )
+                    )
                 }
+
                 "LISTENING-PORT", "CAPA" -> {
                     connection.writeBuffer(respWriter.writeSimpleString("OK"))
                 }

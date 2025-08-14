@@ -72,8 +72,13 @@ class MainEventLoop(
             return
         }
         for (req in respReader.parseRequests(connection)) {
+            val request = req.request
+            val bytes = req.bytes
             for (commandHandler in commandHandlers) {
-                if (commandHandler.isHandle(req[0])) commandHandler.handle(connection, req)
+                if (commandHandler.isHandle(request[0])) {
+                    commandHandler.handle(connection, request)
+                    connection.plusReplOffset(bytes)
+                }
             }
         }
     }
