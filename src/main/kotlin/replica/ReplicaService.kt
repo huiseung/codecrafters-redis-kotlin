@@ -14,7 +14,13 @@ import java.nio.ByteBuffer
 import java.nio.channels.SelectionKey
 import java.nio.channels.Selector
 import java.nio.channels.SocketChannel
-import java.nio.charset.StandardCharsets
+
+data class PendingWait(
+    val connection: ConnectionCtx,
+    val targetOffset: Long,
+    val minReplica: Int,
+    val deadlineMs: Long,
+)
 
 class ReplicaService(
     private val config: RedisConfig,
@@ -24,6 +30,7 @@ class ReplicaService(
 ) {
     val replicas = mutableSetOf<ConnectionCtx>()
     var masterOffset: Long = 0L
+    private val pendingWaits = ArrayDeque<PendingWait>()
 
     fun run() {
         if (config.get("role") != "slave") {
@@ -168,6 +175,29 @@ class ReplicaService(
             }
             baos.write(b)
             prev = b
+        }
+    }
+
+    fun offer(wait: PendingWait) {
+        pendingWaits.add(wait)
+    }
+
+    fun checkWaits() {
+        if (pendingWaits.isEmpty()) return
+        val now = System.currentTimeMillis()
+        val toProcess = ArrayList<PendingWait>(pendingWaits.size)
+        while (pendingWaits.isNotEmpty()) {
+            toProcess.add(pendingWaits.removeFirst())
+        }
+        for (pw in toProcess) {
+            val count = replicas.count() { it.offset >= pw.targetOffset }
+            val timeoutReached = now >= pw.deadlineMs
+            if (count >= pw.minReplica || timeoutReached) {
+                pw.connection.writeBuffer(respWriter.writeInteger(count))
+                pw.connection.enableReadInterest()
+            } else {
+                pendingWaits.add(pw)
+            }
         }
     }
 }

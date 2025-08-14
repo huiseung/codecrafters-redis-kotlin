@@ -94,10 +94,15 @@ ${file_size}\r\n
 - master->replica에게 replica가 살아있음 확인 용으로 ping을 보내 응답 기대는 안하고 offset 만 늘리는 요청을 보낼 수 있다
 
 # wait
+## request
 ```
 wait {num replica} {timeout}
 ```
 - master-replica간 쓰기 명령 동기화 확인 명령어, 보장이 아니라 확인이다
-- num replica: 기다릴 레플리카 수
+- num replica: 기다릴 최소 레플리카 수
 - timeout: 최대 대기 시간(초)
-- 클라이언트가 master가 해당 명령을 보내면 master는 replica의 offset
+
+## response
+- 클라이언트가 master에게 해당 명령을 보내면 master는 replica의 offset를 "replconf getack *" 명령을 통해 알아낸다
+- 지정 시간안에 offset 응답한 min(replica 수, num replica)를 응답
+- master는 wait를 비동기로 계산하고 다른 client의 요청은 받을 수 있다, wait를 요청한 client만 응답을 블로킹으로 기다린다

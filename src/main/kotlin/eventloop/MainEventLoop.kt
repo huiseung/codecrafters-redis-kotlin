@@ -41,6 +41,7 @@ class MainEventLoop(
                 handleKey(key)
             }
             waiterService.expireAll()
+            replicaService.checkWaits()
         }
     }
 

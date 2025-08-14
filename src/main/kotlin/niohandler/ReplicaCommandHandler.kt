@@ -5,6 +5,7 @@ import network.ConnectionCtx
 import network.ConnectionType
 import protocol.Request
 import protocol.RespWriter
+import replica.PendingWait
 import replica.ReplicaService
 import java.io.File
 import java.io.FileInputStream
@@ -61,10 +62,14 @@ class ReplicaCommandHandler(
                     }
                 }
 
+                "ACK" -> {
+                    val ack = args[1].toLong()
+                    connection.offset = ack
+                }
+
                 "LISTENING-PORT", "CAPA" -> {
                     connection.writeBuffer(respWriter.writeSimpleString("OK"))
                 }
-
             }
         }
 
@@ -98,9 +103,24 @@ class ReplicaCommandHandler(
 
     private fun wait(connection: ConnectionCtx, request: Request) {
         val args = request.request.drop(1)
-        val numReplica = args[0]
-        val timeout = args[1].toInt()
+        val numReplica = args[0].toInt()
+        val timeoutMs = args[1].toLong()
 
-        connection.writeBuffer(respWriter.writeInteger(replicaService.replicas.size))
+        if (replicaService.replicas.isEmpty()) {
+            connection.writeBuffer(respWriter.writeInteger(0))
+            return
+        }
+        connection.disableReadInterest()
+        val target = replicaService.masterOffset
+
+        val payload = respWriter.writeArrayOfBulkString(listOf("REPLCONF", "GETACK", "*"))
+        for (repl in replicaService.replicas) {
+            val dup = payload.duplicate()
+            dup.position(0)
+            dup.limit(payload.limit())
+            repl.writeBuffer(dup)
+        }
+        val deadline = System.currentTimeMillis() + timeoutMs
+        replicaService.offer(PendingWait(connection, target, numReplica, deadline))
     }
 }
