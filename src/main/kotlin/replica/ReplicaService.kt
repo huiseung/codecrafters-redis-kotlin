@@ -4,6 +4,7 @@ import config.RedisConfig
 import network.ConnectionCtx
 import network.ConnectionType
 import persistence.RdbManager
+import protocol.Request
 import protocol.RespWriter
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
@@ -21,7 +22,8 @@ class ReplicaService(
     private val selector: Selector,
     private val rdbManager: RdbManager,
 ) {
-    private val replicas = mutableSetOf<ConnectionCtx>()
+    val replicas = mutableSetOf<ConnectionCtx>()
+    var masterOffset: Long = 0L
 
     fun run() {
         if (config.get("role") != "slave") {
@@ -33,15 +35,16 @@ class ReplicaService(
         key.attach(ConnectionCtx(key, ConnectionType.FOR_MASTER))
     }
 
-    fun propagation(req: List<String>) {
+    fun propagation(req: Request) {
         if (config.get("role") != "master") return
-        val payload = respWriter.writeArrayOfBulkString(req)
+        val payload = respWriter.writeArrayOfBulkString(req.request)
         for (repl in replicas) {
             val dup = payload.duplicate()
             dup.position(0)
             dup.limit(payload.limit())
             repl.writeBuffer(dup)
         }
+        masterOffset += req.bytes
     }
 
     fun registerReplica(connectionCtx: ConnectionCtx) {
@@ -98,6 +101,7 @@ class ReplicaService(
             private val tmp = ByteBuffer.allocate(8192).apply {
                 flip()
             }
+
             override fun read(): Int {
                 val one = ByteArray(1)
                 val n = read(one, 0, 1)

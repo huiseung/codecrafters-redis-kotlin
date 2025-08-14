@@ -93,3 +93,11 @@ ${file_size}\r\n
 - offset은 replica가 받은 요청들의 resp 표현 바이트 누적값이다
 - master->replica에게 replica가 살아있음 확인 용으로 ping을 보내 응답 기대는 안하고 offset 만 늘리는 요청을 보낼 수 있다
 
+# wait
+```
+wait {num replica} {timeout}
+```
+- master-replica간 쓰기 명령 동기화 확인 명령어, 보장이 아니라 확인이다
+- num replica: 기다릴 레플리카 수
+- timeout: 최대 대기 시간(초)
+- 클라이언트가 master가 해당 명령을 보내면 master는 replica의 offset

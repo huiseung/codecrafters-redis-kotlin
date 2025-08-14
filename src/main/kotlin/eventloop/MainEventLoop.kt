@@ -76,8 +76,8 @@ class MainEventLoop(
             val bytes = req.bytes
             for (commandHandler in commandHandlers) {
                 if (commandHandler.isHandle(request[0])) {
-                    commandHandler.handle(connection, request)
-                    connection.plusReplOffset(bytes)
+                    commandHandler.handle(connection, req)
+
                 }
             }
         }

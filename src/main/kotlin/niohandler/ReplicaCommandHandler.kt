@@ -3,6 +3,7 @@ package niohandler
 import config.RedisConfig
 import network.ConnectionCtx
 import network.ConnectionType
+import protocol.Request
 import protocol.RespWriter
 import replica.ReplicaService
 import java.io.File
@@ -16,31 +17,33 @@ class ReplicaCommandHandler(
     private val replicaService: ReplicaService,
 
     ) : CommandHandler {
-    private val cmds = setOf("INFO", "REPLCONF", "PSYNC")
+    private val cmds = setOf("INFO", "REPLCONF", "PSYNC", "WAIT")
     private val replid = "8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb"
 
     override fun isHandle(cmd: String): Boolean {
         return cmds.contains(cmd)
     }
 
-    override fun handle(connection: ConnectionCtx, request: List<String>) {
-        val cmd = request[0]
-        val args = request.drop(1)
+    override fun handle(connection: ConnectionCtx, request: Request) {
+        val cmd = request.request[0]
         when (cmd) {
-            "INFO" -> info(connection, args)
-            "REPLCONF" -> replconf(connection, args)
-            "PSYNC" -> psync(connection, args)
+            "INFO" -> info(connection, request)
+            "REPLCONF" -> replconf(connection, request)
+            "PSYNC" -> psync(connection, request)
+            "WAIT" -> wait(connection, request)
         }
     }
 
-    private fun info(connection: ConnectionCtx, args: List<String>) {
+    private fun info(connection: ConnectionCtx, request: Request) {
+        val args = request.request.drop(1)
         val key = args[0]
         if (key == "replication") {
             connection.writeBuffer(respWriter.writeBulkString("role:${config.get("role")}\r\nmaster_replid:$replid\r\nmaster_repl_offset:0"))
         }
     }
 
-    private fun replconf(connection: ConnectionCtx, args: List<String>) {
+    private fun replconf(connection: ConnectionCtx, request: Request) {
+        val args = request.request.drop(1)
         if (args.isNotEmpty()) {
             when (args[0].uppercase()) {
                 "GETACK" -> {
@@ -49,10 +52,13 @@ class ReplicaCommandHandler(
                             listOf(
                                 "REPLCONF",
                                 "ACK",
-                                "${connection.replOffset}"
+                                "${connection.offset}"
                             )
                         )
                     )
+                    if (connection.connectionType == ConnectionType.FOR_MASTER) {
+                        connection.plusOffset(request.bytes)
+                    }
                 }
 
                 "LISTENING-PORT", "CAPA" -> {
@@ -61,9 +67,10 @@ class ReplicaCommandHandler(
 
             }
         }
+
     }
 
-    private fun psync(connection: ConnectionCtx, args: List<String>) {
+    private fun psync(connection: ConnectionCtx, request: Request) {
         connection.writeBuffer(respWriter.writeSimpleString("FULLRESYNC $replid 0"))
         val dir = config.get("dir")
         val dbfilename = config.get("dbfilename")
@@ -87,5 +94,13 @@ class ReplicaCommandHandler(
         }
         connection.connectionType = ConnectionType.FOR_REPLICA
         replicaService.registerReplica(connection)
+    }
+
+    private fun wait(connection: ConnectionCtx, request: Request) {
+        val args = request.request.drop(1)
+        val numReplica = args[0]
+        val timeout = args[1].toInt()
+
+        connection.writeBuffer(respWriter.writeInteger(0))
     }
 }

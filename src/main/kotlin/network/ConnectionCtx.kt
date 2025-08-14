@@ -14,7 +14,7 @@ class ConnectionCtx(
     var connectionType: ConnectionType,
     var readBuffer: ByteBuffer = ByteBuffer.allocate(64 * 1024),
     val writeBufferQueue: ArrayDeque<ByteBuffer> = ArrayDeque<ByteBuffer>(),
-    var replOffset: Long = 0L,
+    var offset: Long = 0L,
 ) {
     fun feed(shareReadBuffer: ByteBuffer) {
         shareReadBuffer.flip()
@@ -54,8 +54,7 @@ class ConnectionCtx(
         selectionKey.interestOps(cur or SelectionKey.OP_READ)
     }
 
-    fun plusReplOffset(consume: Int) {
-        if (connectionType != ConnectionType.FOR_MASTER) return
-        if (consume > 0) replOffset += consume.toLong()
+    fun plusOffset(consume: Int) {
+        if (consume > 0) offset += consume.toLong()
     }
 }

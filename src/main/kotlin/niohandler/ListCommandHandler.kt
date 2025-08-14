@@ -1,6 +1,7 @@
 package niohandler
 
 import network.ConnectionCtx
+import protocol.Request
 import protocol.RespWriter
 import replica.ReplicaService
 import storage.StorageService
@@ -21,20 +22,20 @@ class ListCommandHandler(
         return handleCmds.contains(cmd)
     }
 
-    override fun handle(connection: ConnectionCtx, request: List<String>) {
-        val cmd = request[0]
-        val args = request.drop(1)
+    override fun handle(connectionCtx: ConnectionCtx, request: Request) {
+        val cmd = request.request[0]
         when (cmd) {
-            "RPUSH" -> rpush(connection, args)
-            "LPUSH" -> lpush(connection, args)
-            "LRANGE" -> lrange(connection, args)
-            "LLEN" -> llen(connection, args)
-            "LPOP" -> lpop(connection, args)
-            "BLPOP" -> blpop(connection, args)
+            "RPUSH" -> rpush(connectionCtx, request)
+            "LPUSH" -> lpush(connectionCtx, request)
+            "LRANGE" -> lrange(connectionCtx, request)
+            "LLEN" -> llen(connectionCtx, request)
+            "LPOP" -> lpop(connectionCtx, request)
+            "BLPOP" -> blpop(connectionCtx, request)
         }
     }
 
-    private fun rpush(connection: ConnectionCtx, args: List<String>) {
+    private fun rpush(connection: ConnectionCtx, request: Request) {
+        val args = request.request.drop(1)
         val key = args[0]
         val values = args.drop(1)
         val list = storageService.getOrCreateList(key)
@@ -43,7 +44,8 @@ class ListCommandHandler(
         deliverToWaiters(key)
     }
 
-    private fun lpush(connection: ConnectionCtx, args: List<String>) {
+    private fun lpush(connection: ConnectionCtx, request: Request) {
+        val args = request.request.drop(1)
         val key = args[0]
         val values = args.drop(1)
         val list = storageService.getOrCreateList(key)
@@ -53,7 +55,8 @@ class ListCommandHandler(
         connection.writeBuffer(respWriter.writeInteger(list.size))
     }
 
-    private fun lrange(connection: ConnectionCtx, args: List<String>) {
+    private fun lrange(connection: ConnectionCtx, request: Request) {
+        val args = request.request.drop(1)
         val key = args[0]
         var start = args[1].toInt()
         var end = args[2].toInt()
@@ -86,13 +89,15 @@ class ListCommandHandler(
         connection.writeBuffer(respWriter.writeArrayOfBulkString(ret))
     }
 
-    private fun llen(connection: ConnectionCtx, args: List<String>) {
+    private fun llen(connection: ConnectionCtx, request: Request) {
+        val args = request.request.drop(1)
         val key = args[0]
         val list = storageService.getList(key)
         connection.writeBuffer(respWriter.writeInteger(list?.size ?: 0))
     }
 
-    private fun lpop(connection: ConnectionCtx, args: List<String>) {
+    private fun lpop(connection: ConnectionCtx, request: Request) {
+        val args = request.request.drop(1)
         val key = args[0]
         val list = storageService.getList(key)
         if (list == null) {
@@ -111,7 +116,8 @@ class ListCommandHandler(
         connection.writeBuffer(respWriter.writeArrayOfBulkString(ret))
     }
 
-    private fun blpop(connection: ConnectionCtx, args: List<String>) {
+    private fun blpop(connection: ConnectionCtx, request: Request) {
+        val args = request.request.drop(1)
         val key = args[0]
         val timeoutMs = (args[1].toDouble() * 1000).toLong()
         val list = storageService.getList(key)

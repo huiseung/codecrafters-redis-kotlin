@@ -3,6 +3,7 @@ package niohandler
 import config.RedisConfig
 import network.ConnectionCtx
 import network.ConnectionType
+import protocol.Request
 import protocol.RespWriter
 import storage.StorageService
 
@@ -16,29 +17,33 @@ class BasicCommandHandler(
         return cmds.contains(cmd)
     }
 
-    override fun handle(connectionCtx: ConnectionCtx, request: List<String>) {
-        val cmd = request[0]
-        val args = request.drop(1)
+    override fun handle(connectionCtx: ConnectionCtx, request: Request) {
+        val cmd = request.request[0]
         when (cmd) {
-            "PING" -> ping(connectionCtx)
-            "ECHO" -> echo(connectionCtx, args)
-            "CONFIG" -> config(connectionCtx, args)
-            "KEYS" -> keys(connectionCtx, args)
+            "PING" -> ping(connectionCtx, request)
+            "ECHO" -> echo(connectionCtx, request)
+            "CONFIG" -> config(connectionCtx, request)
+            "KEYS" -> keys(connectionCtx, request)
         }
     }
 
-    private fun ping(connectionCtx: ConnectionCtx) {
-        if(connectionCtx.connectionType == ConnectionType.FOR_MASTER){
+    private fun ping(connectionCtx: ConnectionCtx, request: Request) {
+        if (connectionCtx.connectionType == ConnectionType.FOR_MASTER) {
+            connectionCtx.plusOffset(request.bytes)
             return
         }
         connectionCtx.writeBuffer(respWriter.writeSimpleString("PONG"))
     }
 
-    private fun echo(connectionCtx: ConnectionCtx, args: List<String>) {
+    private fun echo(connectionCtx: ConnectionCtx, request: Request) {
+        val req = request.request
+        val cmd = req[0]
+        val args = req.drop(1)
         connectionCtx.writeBuffer(respWriter.writeBulkString(args[0]))
     }
 
-    private fun config(connectionCtx: ConnectionCtx, args: List<String>) {
+    private fun config(connectionCtx: ConnectionCtx, request: Request) {
+        val args = request.request.drop(1)
         val value = args[0]
         if (value.uppercase() == "GET") {
             val param = args[1]
@@ -52,7 +57,8 @@ class BasicCommandHandler(
         }
     }
 
-    private fun keys(connectionCtx: ConnectionCtx, args: List<String>) {
+    private fun keys(connectionCtx: ConnectionCtx, request: Request) {
+        val args = request.request.drop(1)
         val value = args[0]
         val ret = storageService.keys(value)
         connectionCtx.writeBuffer(respWriter.writeArrayOfBulkString(ret))
