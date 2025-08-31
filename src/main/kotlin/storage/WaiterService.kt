@@ -35,7 +35,7 @@ class WaiterService(
                 val waiter = it.next()
                 if (waiter.remains != null && waiter.remains <= now) {
                     it.remove()
-                    waiter.connection.writeBuffer(respWriter.writeNil())
+                    waiter.connection.writeBuffer(respWriter.writeNilArray())
                     waiter.connection.enableReadInterest()
                 }
             }

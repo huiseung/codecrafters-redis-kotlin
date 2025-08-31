@@ -7,13 +7,13 @@ import niohandler.CommandHandler
 import protocol.RespReader
 import replica.ReplicaService
 import storage.WaiterService
-import java.lang.Exception
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.SelectionKey
 import java.nio.channels.Selector
 import java.nio.channels.ServerSocketChannel
 import java.nio.channels.SocketChannel
+import kotlin.Exception
 
 class MainEventLoop(
     private val config: RedisConfig,
@@ -47,6 +47,8 @@ class MainEventLoop(
 
 
     private fun handleKey(key: SelectionKey) {
+
+        if (!key.isValid) return
         try {
             when {
                 key.isAcceptable -> handleAccept(key)
@@ -55,6 +57,14 @@ class MainEventLoop(
             }
         } catch (e: Exception) {
             println("handleKeys: ${e.message}")
+            try {
+                key.channel().close()
+            } catch (_: Exception) {
+            }
+            try {
+                key.cancel()
+            } catch (_: Exception) {
+            }
         }
     }
 

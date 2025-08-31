@@ -25,6 +25,13 @@ class RespWriter {
         return buffer
     }
 
+    fun writeNilArray(): ByteBuffer{
+        val buffer = ByteBuffer.wrap(
+            "${RESP.array}${RESP.nil}${RESP.crlf}".toByteArray(StandardCharsets.UTF_8)
+        )
+        return buffer
+    }
+
     fun writeInteger(int: Int): ByteBuffer {
         val buffer = ByteBuffer.wrap(
             "${RESP.integer}$int${RESP.crlf}".toByteArray(StandardCharsets.UTF_8)
